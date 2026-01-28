@@ -1,42 +1,53 @@
 "use server";
 
-import { appendSheetData } from "@/lib/google";
+import { query } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
-export async function registerRelawanAction(formData: any) {
+// Kita gunakan FormData agar kompatibel dengan 'useActionState' atau <form action>
+export async function registerRelawanAction(
+  prevState: any,
+  formData: FormData,
+) {
   try {
-    const timestamp = new Date().toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-    });
-    const id = "REG-" + Date.now().toString().slice(-6);
+    // 1. Ambil data dari FormData
+    const nama = formData.get("nama") as string;
+    const nim = formData.get("nim") as string;
+    const universitas = formData.get("universitas") as string;
+    const jurusan = formData.get("jurusan") as string;
+    const semester = formData.get("semester") as string;
+    const whatsapp = formData.get("whatsapp") as string;
+    const email = formData.get("email") as string;
+    const alasan = formData.get("alasan") as string;
 
-    // Susunan Kolom: [ID, Tanggal, Nama, NIM, Kampus, Jurusan, Semester, WA, Email, Motivasi, Status]
-    const newRow = [
-      id,
-      timestamp,
-      formData.nama,
-      `'${formData.nim}`, // Pakai ' agar tidak dianggap angka
-      formData.universitas,
-      formData.jurusan,
-      formData.semester,
-      `'${formData.whatsapp}`, // Pakai ' agar 0 di depan tidak hilang
-      formData.email,
-      formData.alasan,
-      "MENUNGGU SELEKSI", // Status Default
-    ];
-
-    const result = await appendSheetData("Data Relawan!A:K", [newRow]);
-
-    if (result) {
+    // Validasi sederhana (Opsional)
+    if (!nama || !nim || !whatsapp) {
       return {
-        success: true,
-        message:
-          "Formulir berhasil dikirim! Panitia akan menghubungi Anda via WhatsApp/Email.",
+        success: false,
+        message: "Nama, NIM, dan WhatsApp wajib diisi.",
       };
-    } else {
-      return { success: false, message: "Gagal menyimpan data ke database." };
     }
+
+    // 2. Simpan ke Database Neon
+    await query(
+      `INSERT INTO volunteer_logs 
+       (nama_lengkap, nim, universitas, jurusan, semester, whatsapp, email, alasan, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'MENUNGGU SELEKSI')`,
+      [nama, nim, universitas, jurusan, semester, whatsapp, email, alasan],
+    );
+
+    // 3. Revalidate halaman agar data baru (jika ada list) ter-update
+    revalidatePath("/dashboard/relawan");
+
+    return {
+      success: true,
+      message:
+        "Formulir berhasil dikirim! Panitia akan menghubungi Anda via WhatsApp/Email.",
+    };
   } catch (error) {
     console.error("Error register relawan:", error);
-    return { success: false, message: "Terjadi kesalahan server." };
+    return {
+      success: false,
+      message: "Terjadi kesalahan server saat menyimpan data.",
+    };
   }
 }

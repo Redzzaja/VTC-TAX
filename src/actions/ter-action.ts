@@ -1,6 +1,6 @@
 "use server";
 
-import { appendSheetData, getSheetData } from "@/lib/google";
+import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 // Helper: Tentukan Kategori TER berdasarkan PTKP
@@ -21,21 +21,31 @@ function getKategoriTER(ptkp: string) {
 // --- ACTION 1: AMBIL DATA (READ) ---
 export async function getTerListAction() {
   try {
-    const rows = await getSheetData("Data TER!A2:H");
-    if (!rows) return [];
+    // Ambil data dari tabel 'ter_logs' di Neon
+    // Kita urutkan dari yang terbaru (DESC)
+    const result = await query(
+      "SELECT * FROM ter_logs ORDER BY created_at DESC",
+    );
 
-    return rows
-      .map((row) => ({
-        id: row[0],
-        tanggal: row[1],
-        nama: row[2],
-        nik: row[3]?.replace("'", "") || "",
-        ptkp: row[4],
-        bruto: parseFloat(row[5]) || 0,
-        tarif: row[6],
-        pph: parseFloat(row[7]) || 0,
-      }))
-      .reverse();
+    // Mapping data agar struktur JSON-nya sama dengan yang diharapkan frontend
+    return result.rows.map((row) => ({
+      id: row.id, // ID dari Serial DB (1, 2, 3...)
+      tanggal: new Date(row.created_at).toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      nama: row.nama_pegawai,
+      nik: row.nik || "-",
+      // Format ulang tampilan PTKP agar mirip versi Sheet: "TK/0 (TER A)"
+      ptkp: `${row.status_ptkp} (TER ${getKategoriTER(row.status_ptkp)})`,
+      bruto: Number(row.penghasilan_bruto),
+      tarif: `${row.tarif_ter}%`, // Tambahkan '%' agar tampilan di tabel sesuai
+      pph: Number(row.pph_amount),
+    }));
   } catch (error) {
     console.error("Error get data:", error);
     return [];
@@ -45,20 +55,16 @@ export async function getTerListAction() {
 // --- ACTION 2: HITUNG & SIMPAN (CREATE) ---
 export async function calculateTerAction(formData: any) {
   try {
-    const timestamp = new Date().toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-    });
-    const id = "TER-" + Date.now().toString().slice(-6);
-
     // 1. Ambil Input
     const bruto = parseFloat(formData.bruto) || 0;
     const ptkp = formData.ptkp;
+    const nama = formData.nama;
+    const nik = formData.nik;
 
     // 2. Tentukan Kategori
     const kategori = getKategoriTER(ptkp);
 
-    // 3. Logika Tarif Sederhana (Simulasi)
-    // (Bisa diganti dengan tabel lengkap PP 58 nanti)
+    // 3. Logika Tarif Sederhana
     let tarifPersen = 0;
 
     if (kategori === "A") {
@@ -67,6 +73,7 @@ export async function calculateTerAction(formData: any) {
       else if (bruto <= 5950000) tarifPersen = 0.5;
       else if (bruto <= 6300000) tarifPersen = 0.75;
       else tarifPersen = 1.5;
+      // ... (bisa dilanjutkan sesuai aturan lengkap)
     } else if (kategori === "B") {
       if (bruto <= 6200000) tarifPersen = 0;
       else tarifPersen = 2.0;
@@ -78,32 +85,25 @@ export async function calculateTerAction(formData: any) {
 
     const pph = Math.floor(bruto * (tarifPersen / 100));
 
-    // 4. Simpan ke Google Sheet
-    // Kolom: [ID, Tanggal, Nama, NIK, PTKP, Bruto, Tarif, PPh]
-    const newRow = [
-      id,
-      timestamp,
-      formData.nama,
-      `'${formData.nik}`,
-      `${ptkp} (TER ${kategori})`,
-      bruto,
-      `${tarifPersen}%`,
-      pph,
-    ];
+    // 4. Simpan ke Database Neon
+    // Kita simpan PTKP murni (misal "TK/0") ke kolom status_ptkp
+    // agar datanya bersih.
+    await query(
+      `INSERT INTO ter_logs 
+       (nama_pegawai, nik, status_ptkp, penghasilan_bruto, tarif_ter, pph_amount) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [nama, nik, ptkp, bruto, tarifPersen, pph],
+    );
 
-    const result = await appendSheetData("Data TER!A:H", [newRow]);
+    revalidatePath("/dashboard/ter");
 
-    if (result) {
-      revalidatePath("/dashboard/ter");
-      return {
-        success: true,
-        message: "Perhitungan Berhasil!",
-        hasil: { pph: pph, tarif: tarifPersen, kategori: kategori },
-      };
-    } else {
-      return { success: false, message: "Gagal koneksi database." };
-    }
+    return {
+      success: true,
+      message: "Perhitungan Berhasil Disimpan!",
+      hasil: { pph: pph, tarif: tarifPersen, kategori: kategori },
+    };
   } catch (error) {
-    return { success: false, message: "Server Error" };
+    console.error("Server Error:", error);
+    return { success: false, message: "Gagal menyimpan ke database." };
   }
 }

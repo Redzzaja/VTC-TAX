@@ -1,6 +1,6 @@
 "use server";
 
-import { appendSheetData, getSheetData } from "@/lib/google";
+import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 // Tipe Data
@@ -18,41 +18,48 @@ type SptFormData = {
 // --- ACTION 1: AMBIL DATA (READ) ---
 export async function getSptListAction() {
   try {
-    const rows = await getSheetData("Data SPT!A2:I");
-    if (!rows) return [];
+    // Ambil data dari Neon, urutkan dari yang terbaru
+    const result = await query(
+      "SELECT * FROM spt_logs ORDER BY created_at DESC",
+    );
 
-    return rows
-      .map((row) => {
-        let extraData = {
-          jenis_surat: "-",
-          no_objek: "-",
-          id_billing: "-",
-          bpe: "-", // Bukti Penerimaan Elektronik
-          nominal: "0",
-        };
+    return result.rows.map((row) => {
+      // Format tanggal dari timestamp database
+      const tanggalFormatted = new Date(row.created_at).toLocaleString(
+        "id-ID",
+        {
+          day: "numeric",
+          month: "numeric",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        },
+      );
 
-        try {
-          if (row[8]) extraData = JSON.parse(row[8]);
-        } catch (e) {}
+      // Format Periode (Tahunan vs Masa)
+      const periodeDisplay =
+        row.masa_pajak === "Tahunan"
+          ? `Tahunan ${row.tahun_pajak}`
+          : `${row.masa_pajak} ${row.tahun_pajak}`;
 
-        return {
-          id: row[0],
-          jenis_pajak: row[1],
-          jenis_surat: extraData.jenis_surat || "-",
-          periode:
-            row[2] === "Tahunan" ? `Tahunan ${row[3]}` : `${row[2]} ${row[3]}`,
-          tahun: row[3],
-          no_objek: extraData.no_objek || "-",
-          model: row[5] === "0" ? "NORMAL" : `PEMBETULAN ${row[5]}`,
-          id_billing: extraData.id_billing || "-",
-          bpe: extraData.bpe || "-",
-          status: (row[4] || "KONSEP").toUpperCase().replace(" ", "_"),
-          nominal: parseFloat(extraData.nominal || row[7] || "0"),
-          tanggal: row[6],
-        };
-      })
-      .reverse();
+      // Mapping ke format yang dipakai di Frontend (Page)
+      return {
+        id: row.id.toString(), // ID database biasanya number, convert ke string
+        jenis_pajak: row.jenis_pajak,
+        jenis_surat: row.jenis_surat || "-",
+        periode: periodeDisplay,
+        tahun: row.tahun_pajak,
+        no_objek: row.no_objek || "-",
+        model: row.pembetulan === 0 ? "NORMAL" : `PEMBETULAN ${row.pembetulan}`,
+        id_billing: row.id_billing || "-",
+        bpe: row.bpe_number || "-",
+        status: (row.status || "KONSEP").toUpperCase().replace(" ", "_"),
+        nominal: Number(row.nominal || 0),
+        tanggal: tanggalFormatted,
+      };
+    });
   } catch (error) {
+    console.error("Gagal ambil SPT:", error);
     return [];
   }
 }
@@ -60,52 +67,44 @@ export async function getSptListAction() {
 // --- ACTION 2: BUAT SPT (CREATE) ---
 export async function createSptAction(data: SptFormData) {
   try {
-    const timestamp = new Date().toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-    });
-    const id = "SPT-" + Date.now().toString().slice(-6);
-
-    // Cek apakah ini "Lapor Langsung" atau "Konsep"
+    // 1. Cek Status & Generate BPE jika 'DILAPORKAN'
     const statusAwal = data.status || "Konsep";
-
-    // Jika Lapor Langsung, Generate BPE
     let bpe = "-";
+
     if (statusAwal === "DILAPORKAN") {
       const rand = Math.floor(10000000 + Math.random() * 90000000);
       bpe = `S-${rand}/${data.tahun}`;
     }
 
-    const extraData = {
-      jenis_surat: data.jenisSurat,
-      no_objek: data.noObjek,
-      id_billing: "-",
-      bpe: bpe,
-      nominal: data.nominal || "0",
-      source: "Next.js Integrated",
-    };
+    // 2. Parse Nominal & Pembetulan
+    const nominalVal = parseFloat(data.nominal || "0");
+    const pembetulanVal = parseInt(data.pembetulan || "0");
 
-    const newRow = [
-      id,
-      data.jenisPajak,
-      data.masa,
-      data.tahun,
-      statusAwal, // Status Dinamis
-      data.pembetulan || "0",
-      timestamp,
-      data.nominal || "0", // Total PPh
-      JSON.stringify(extraData),
-    ];
+    // 3. Simpan ke Database Neon
+    await query(
+      `INSERT INTO spt_logs 
+       (jenis_pajak, jenis_surat, masa_pajak, tahun_pajak, pembetulan, no_objek, status, nominal, bpe_number) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        data.jenisPajak,
+        data.jenisSurat,
+        data.masa,
+        data.tahun,
+        pembetulanVal,
+        data.noObjek,
+        statusAwal,
+        nominalVal,
+        bpe,
+      ],
+    );
 
-    const result = await appendSheetData("Data SPT!A:I", [newRow]);
+    // 4. Revalidate Cache
+    revalidatePath("/dashboard/spt");
+    revalidatePath("/dashboard/simulasi/coretax");
 
-    if (result) {
-      revalidatePath("/dashboard/spt");
-      revalidatePath("/dashboard/simulasi/coretax");
-      return { success: true, message: "Data Berhasil Disimpan!", bpe: bpe };
-    } else {
-      return { success: false, message: "Gagal koneksi ke Google Sheets." };
-    }
+    return { success: true, message: "Data Berhasil Disimpan!", bpe: bpe };
   } catch (error) {
-    return { success: false, message: "Terjadi kesalahan server." };
+    console.error("Error create SPT:", error);
+    return { success: false, message: "Terjadi kesalahan server (Database)." };
   }
 }

@@ -1,28 +1,44 @@
 "use client";
 
 import { useActionState } from "react";
-import { loginAction } from "@/actions/auth";
-import Link from "next/link"; // <--- 1. Tambahkan import ini
+import { registerAction } from "@/actions/register";
+import Link from "next/link";
 
 const initialState = {
   success: false,
   message: "",
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(
-    loginAction,
+    registerAction,
     initialState,
   );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          VTC TAX SYSTEM
+        <h1 className="text-2xl font-bold text-center mb-2 text-gray-800">
+          Daftar Akun Baru
         </h1>
+        <p className="text-center text-gray-500 mb-6 text-sm">
+          Bergabung dengan VTC Tax System
+        </p>
 
         <form action={formAction} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Nama Lengkap
+            </label>
+            <input
+              name="name"
+              type="text"
+              required
+              placeholder="Contoh: Budi Santoso"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Username
@@ -31,6 +47,7 @@ export default function LoginPage() {
               name="username"
               type="text"
               required
+              placeholder="Untuk login nanti"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -48,7 +65,9 @@ export default function LoginPage() {
           </div>
 
           {state?.message && (
-            <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+            <div
+              className={`text-sm text-center p-2 rounded ${state.success ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}
+            >
               {state.message}
             </div>
           )}
@@ -56,25 +75,21 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 disabled:opacity-50"
+            className="w-full bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 disabled:opacity-50 transition-colors"
           >
-            {isPending ? "Memuat..." : "Masuk Aplikasi"}
+            {isPending ? "Memproses..." : "Daftar Sekarang"}
           </button>
         </form>
 
-        {/* --- 2. Tambahkan Link Register di sini --- */}
-        <div className="mt-6 text-center text-sm">
-          <p className="text-gray-600">
-            Belum punya akun?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
-            >
-              Daftar Sekarang
-            </Link>
-          </p>
+        <div className="text-center mt-6 text-sm">
+          <span className="text-gray-600">Sudah punya akun? </span>
+          <Link
+            href="/"
+            className="text-blue-600 font-semibold hover:underline"
+          >
+            Login disini
+          </Link>
         </div>
-        {/* ------------------------------------------ */}
       </div>
     </div>
   );

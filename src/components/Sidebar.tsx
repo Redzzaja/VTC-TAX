@@ -14,15 +14,12 @@ import {
   ClipboardCheck,
   GraduationCap,
   LogOut,
+  X, // Tambahkan icon X untuk tombol close
 } from "lucide-react";
 
-// Definisi Menu Sesuai Permintaan
 const menuItems = [
   { name: "Beranda", href: "/dashboard", icon: LayoutDashboard },
-
-  // Section Header: Taxation
   { type: "header", name: "Taxation" },
-
   { name: "Simulasi CoreVTC", href: "/dashboard/simulasi", icon: MonitorPlay },
   { name: "Perhitungan TER", href: "/dashboard/ter", icon: Calculator },
   { name: "Kalkulator Pajak", href: "/dashboard/kalkulator", icon: Percent },
@@ -33,35 +30,42 @@ const menuItems = [
     icon: MessageCircle,
   },
   { name: "Materi Perpajakan", href: "/dashboard/materi", icon: BookOpen },
-  {
-    name: "Seleksi Relawan Pajak",
-    href: "/dashboard/seleksi",
-    icon: ClipboardCheck,
-  },
-  {
-    name: "Ruang Belajar Pajak",
-    href: "/dashboard/belajar",
-    icon: GraduationCap,
-  },
+  { name: "Seleksi Relawan", href: "/dashboard/seleksi", icon: ClipboardCheck },
+  { name: "Ruang Belajar", href: "/dashboard/belajar", icon: GraduationCap },
 ];
 
-export default function Sidebar() {
+// Tambahkan prop optional onMobileClose
+export default function Sidebar({
+  onMobileClose,
+}: {
+  onMobileClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-slate-900 h-screen text-white flex flex-col fixed left-0 top-0 overflow-y-auto border-r border-slate-800 z-50">
+    <aside className="w-64 bg-slate-900 h-full text-white flex flex-col overflow-y-auto border-r border-slate-800">
       {/* Header / Brand */}
-      <div className="p-6 border-b border-slate-800">
-        <h1 className="text-xl font-bold text-yellow-500 tracking-wider">
-          COREVTC
-        </h1>
-        <p className="text-xs text-slate-400 mt-1 font-mono">SYSTEM V1.0</p>
+      <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold text-yellow-500 tracking-wider">
+            COREVTC
+          </h1>
+          <p className="text-xs text-slate-400 mt-1 font-mono">SYSTEM V1.0</p>
+        </div>
+        {/* Tombol Close hanya muncul di Mobile (jika onMobileClose ada) */}
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="lg:hidden text-slate-400 hover:text-white"
+          >
+            <X size={24} />
+          </button>
+        )}
       </div>
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item, index) => {
-          // Render Section Header (Taxation)
           if (item.type === "header") {
             return (
               <div key={index} className="px-4 pt-6 pb-2">
@@ -72,30 +76,21 @@ export default function Sidebar() {
             );
           }
 
-          // Render Menu Item Biasa
           const isActive = pathname === item.href;
-          const Icon = item.icon; // Ambil komponen ikon
+          const Icon = item.icon;
 
           return (
             <Link
               key={index}
               href={item.href || "#"}
+              onClick={onMobileClose} // Tutup sidebar saat link diklik (di mobile)
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group ${
                 isActive
                   ? "bg-blue-600 text-white shadow-md"
                   : "text-slate-400 hover:bg-slate-800 hover:text-white"
               }`}
             >
-              {Icon && (
-                <Icon
-                  size={18}
-                  className={
-                    isActive
-                      ? "text-white"
-                      : "text-slate-400 group-hover:text-white"
-                  }
-                />
-              )}
+              {Icon && <Icon size={18} />}
               <span className="text-sm font-medium">{item.name}</span>
             </Link>
           );

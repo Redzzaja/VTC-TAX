@@ -2,19 +2,17 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Ambil cookie sesi user
   const session = request.cookies.get("user_session");
-
-  // Cek halaman yang sedang diakses
   const { pathname } = request.nextUrl;
 
-  // ATURAN 1: Jika user belum login tapi mau masuk Dashboard -> Tendang ke Login
+  // 1. Lindungi Dashboard (Tidak ada perubahan)
   if (pathname.startsWith("/dashboard") && !session) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // ATURAN 2: Jika user SUDAH login tapi mau masuk halaman Login -> Arahkan ke Dashboard
-  if (pathname === "/" && session) {
+  // 2. Redirect jika User Sudah Login
+  // Tambahkan '|| pathname === "/register"' agar user login tidak bisa daftar lagi
+  if ((pathname === "/" || pathname === "/register") && session) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

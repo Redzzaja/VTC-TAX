@@ -1,32 +1,35 @@
 "use server";
 
-import { getSheetData, appendSheetData } from "@/lib/google";
+import { query } from "@/lib/db";
 
 // --- 1. AMBIL SOAL TANDING/LATIHAN ---
 export async function getLatihanSoalAction() {
   try {
-    // Ambil data dari sheet 'Bank Soal Tanding'
-    // Kolom: [ID, Pertanyaan, Opsi A, Opsi B, Opsi C, Opsi D, Kunci]
-    const rows = await getSheetData("Bank Soal Tanding!A2:G");
+    // Ambil data dari tabel 'bank_soal_tanding'
+    // Gunakan ORDER BY RANDOM() untuk mengacak soal langsung dari database
+    const result = await query(
+      "SELECT * FROM bank_soal_tanding ORDER BY RANDOM() LIMIT 10",
+    );
 
-    if (!rows || rows.length === 0) return { success: false, data: [] };
+    if (result.rows.length === 0) return { success: false, data: [] };
 
-    const questions = rows.map((row) => ({
-      id: row[0],
-      question: row[1],
+    const questions = result.rows.map((row) => ({
+      id: row.id,
+      question: row.question,
       options: {
-        A: row[2],
-        B: row[3],
-        C: row[4],
-        D: row[5],
+        A: row.option_a,
+        B: row.option_b,
+        C: row.option_c,
+        D: row.option_d,
       },
-      correct: row[6]?.trim().toUpperCase(),
+      correct: row.correct_answer?.trim().toUpperCase(),
+      // Gunakan pembahasan dari database jika ada, atau default text
       discussion:
-        "Pembahasan untuk soal ini dapat dipelajari pada Modul PPh Pasal 21.", // Simulasi pembahasan
+        row.discussion ||
+        "Pembahasan untuk soal ini dapat dipelajari pada Modul PPh Pasal 21.",
     }));
 
-    // Acak soal untuk variasi
-    return { success: true, data: questions.sort(() => Math.random() - 0.5) };
+    return { success: true, data: questions };
   } catch (error) {
     console.error("Error get latihan:", error);
     return { success: false, data: [] };
@@ -36,23 +39,16 @@ export async function getLatihanSoalAction() {
 // --- 2. SIMPAN SKOR TANDING ---
 export async function submitTandingAction(data: any) {
   try {
-    const timestamp = new Date().toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-    });
+    // Simpan ke tabel 'hasil_tanding' di Neon
+    await query(
+      `INSERT INTO hasil_tanding (nama, nim, skor, pelanggaran, status) 
+       VALUES ($1, $2, $3, '-', 'Selesai Tanding')`,
+      [data.nama, data.nim, data.score],
+    );
 
-    // Kolom: [Timestamp, Nama Peserta, NIM, Skor Akhir, Pelanggaran, Status]
-    const newRow = [
-      timestamp,
-      data.nama,
-      `'${data.nim}`,
-      data.score,
-      "-", // Pelanggaran
-      "Selesai Tanding",
-    ];
-
-    await appendSheetData("Hasil Tanding VTC!A:F", [newRow]);
     return { success: true, message: "Skor tanding berhasil disimpan!" };
   } catch (error) {
+    console.error("Gagal simpan skor tanding:", error);
     return { success: false, message: "Gagal menyimpan skor." };
   }
 }
