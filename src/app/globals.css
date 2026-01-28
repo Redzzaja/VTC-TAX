@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Custom Reset untuk tampilan Dashboard yang lebih bersih */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 243, 244, 246; /* Gray-100 */
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #f3f4f6; /* Default background abu-abu terang */
+}
+
+/* Scrollbar Custom (Opsional: agar lebih rapi di Sidebar) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b; /* Slate-800 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569; /* Slate-600 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* Slate-400 */
+}
