@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react"; // Hook wajib untuk action server
+import { useActionState, useEffect } from "react"; // Tambah useEffect
 import { registerRelawanAction } from "@/actions/relawan-action";
 import { UploadCloud, Send } from "lucide-react";
+import { toast } from "sonner"; // Import toast
 
 const initialState = {
   success: false,
@@ -10,11 +11,27 @@ const initialState = {
 };
 
 export default function RelawanPage() {
-  // Gunakan hook ini agar cocok dengan signature action (prevState, formData)
   const [state, formAction, isPending] = useActionState(
     registerRelawanAction,
     initialState,
   );
+
+  // --- LOGIKA POP-UP NOTIFIKASI ---
+  useEffect(() => {
+    if (state.message) {
+      if (state.success) {
+        toast.success("Berhasil!", {
+          description: state.message,
+          duration: 4000, // Muncul selama 4 detik
+        });
+      } else {
+        toast.error("Gagal!", {
+          description: state.message,
+        });
+      }
+    }
+  }, [state]); // Jalankan setiap kali state berubah
+  // -------------------------------
 
   return (
     <div className="space-y-6">
@@ -26,22 +43,15 @@ export default function RelawanPage() {
           Bergabunglah menjadi bagian dari Relawan Pajak untuk Negeri.
         </p>
 
-        {/* Tampilkan Pesan Sukses/Gagal */}
-        {state?.message && (
-          <div
-            className={`mt-4 p-4 rounded-lg text-sm font-medium ${
-              state.success
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-red-50 text-red-700 border border-red-200"
-            }`}
-          >
-            {state.message}
-          </div>
-        )}
+        {/* Note: Pesan Error Text (Div Merah/Hijau) di sini BOLEH DIHAPUS 
+            karena sudah digantikan oleh Pop-up Toast. 
+            Tapi kalau mau tetap ada sebagai cadangan juga tidak apa-apa.
+        */}
 
         <form action={formAction} className="mt-8 space-y-6">
+          {/* ... (Input Form Nama, NIM, dll TETAP SAMA seperti sebelumnya) ... */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Nama Lengkap */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Nama Lengkap
@@ -55,7 +65,6 @@ export default function RelawanPage() {
               />
             </div>
 
-            {/* NIM */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">NIM</label>
               <input
@@ -67,7 +76,6 @@ export default function RelawanPage() {
               />
             </div>
 
-            {/* Universitas */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Asal Kampus
@@ -81,7 +89,6 @@ export default function RelawanPage() {
               />
             </div>
 
-            {/* Jurusan */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Jurusan / Prodi
@@ -95,10 +102,9 @@ export default function RelawanPage() {
               />
             </div>
 
-            {/* Semester */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Semester Saat Ini
+                Semester
               </label>
               <select
                 name="semester"
@@ -111,10 +117,9 @@ export default function RelawanPage() {
               </select>
             </div>
 
-            {/* WhatsApp */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                Nomor WhatsApp
+                WhatsApp
               </label>
               <input
                 name="whatsapp"
@@ -125,11 +130,8 @@ export default function RelawanPage() {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Alamat Email
-              </label>
+              <label className="text-sm font-medium text-gray-700">Email</label>
               <input
                 name="email"
                 type="email"
@@ -140,7 +142,6 @@ export default function RelawanPage() {
             </div>
           </div>
 
-          {/* Motivasi */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
               Motivasi Bergabung
@@ -149,32 +150,29 @@ export default function RelawanPage() {
               name="alasan"
               rows={4}
               required
-              placeholder="Ceritakan mengapa Anda ingin menjadi Relawan Pajak..."
+              placeholder="Ceritakan motivasi Anda..."
               className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
             ></textarea>
           </div>
 
-          {/* Upload File Dummy (Hiasan UI) */}
-          <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-center space-y-2">
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
+          {/* Upload File Dummy */}
+          <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-center space-y-2 hover:border-blue-300 transition-colors cursor-pointer group">
+            <div className="p-3 bg-blue-100 text-blue-600 rounded-full group-hover:bg-blue-200 transition-colors">
               <UploadCloud size={24} />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700">
-                Upload CV & Transkrip Nilai (Opsional)
+                Upload CV & Transkrip Nilai
               </p>
-              <p className="text-xs text-gray-400">
-                Format PDF, Maksimal 2MB (Fitur belum aktif)
-              </p>
+              <p className="text-xs text-gray-400">Format PDF, Maksimal 2MB</p>
             </div>
           </div>
 
-          {/* Tombol Submit */}
           <div className="flex justify-end">
             <button
               type="submit"
               disabled={isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {isPending ? (
                 "Mengirim..."

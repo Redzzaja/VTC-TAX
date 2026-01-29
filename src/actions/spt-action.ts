@@ -3,108 +3,115 @@
 import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-// Tipe Data
-type SptFormData = {
-  jenisPajak: string;
-  jenisSurat: string;
-  masa: string;
-  tahun: string;
-  pembetulan: string;
-  noObjek: string;
-  status?: string; // Opsional: Konsep / Dilaporkan
-  nominal?: string; // Opsional: Untuk kurang bayar
-};
-
-// --- ACTION 1: AMBIL DATA (READ) ---
+// --- 1. AMBIL LIST SPT ---
 export async function getSptListAction() {
   try {
-    // Ambil data dari Neon, urutkan dari yang terbaru
-    const result = await query(
-      "SELECT * FROM spt_logs ORDER BY created_at DESC",
-    );
-
-    return result.rows.map((row) => {
-      // Format tanggal dari timestamp database
-      const tanggalFormatted = new Date(row.created_at).toLocaleString(
-        "id-ID",
-        {
-          day: "numeric",
-          month: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        },
-      );
-
-      // Format Periode (Tahunan vs Masa)
-      const periodeDisplay =
-        row.masa_pajak === "Tahunan"
-          ? `Tahunan ${row.tahun_pajak}`
-          : `${row.masa_pajak} ${row.tahun_pajak}`;
-
-      // Mapping ke format yang dipakai di Frontend (Page)
-      return {
-        id: row.id.toString(), // ID database biasanya number, convert ke string
-        jenis_pajak: row.jenis_pajak,
-        jenis_surat: row.jenis_surat || "-",
-        periode: periodeDisplay,
-        tahun: row.tahun_pajak,
-        no_objek: row.no_objek || "-",
-        model: row.pembetulan === 0 ? "NORMAL" : `PEMBETULAN ${row.pembetulan}`,
-        id_billing: row.id_billing || "-",
-        bpe: row.bpe_number || "-",
-        status: (row.status || "KONSEP").toUpperCase().replace(" ", "_"),
-        nominal: Number(row.nominal || 0),
-        tanggal: tanggalFormatted,
-      };
-    });
+    const res = await query("SELECT * FROM spt_logs ORDER BY created_at DESC");
+    return res.rows.map((row) => ({
+      id: row.id,
+      jenis: row.jenis_spt,
+      masa: row.masa,
+      tahun: row.tahun,
+      pembetulan: row.pembetulan,
+      status: row.status,
+      nominal: Number(row.nominal),
+      tanggal: new Date(row.created_at).toLocaleDateString("id-ID"),
+    }));
   } catch (error) {
     console.error("Gagal ambil SPT:", error);
     return [];
   }
 }
 
-// --- ACTION 2: BUAT SPT (CREATE) ---
-export async function createSptAction(data: SptFormData) {
+// --- 2. SIMPAN DRAFT SPT (WIZARD - AUTO SYNC) ---
+export async function saveSptDraftAction(data: any) {
   try {
-    // 1. Cek Status & Generate BPE jika 'DILAPORKAN'
-    const statusAwal = data.status || "Konsep";
-    let bpe = "-";
+    // A. Cek apakah ada data E-Bupot 'Terbit' di periode ini
+    const masaLengkap = `${data.masa} ${data.tahun}`;
 
-    if (statusAwal === "DILAPORKAN") {
-      const rand = Math.floor(10000000 + Math.random() * 90000000);
-      bpe = `S-${rand}/${data.tahun}`;
-    }
-
-    // 2. Parse Nominal & Pembetulan
-    const nominalVal = parseFloat(data.nominal || "0");
-    const pembetulanVal = parseInt(data.pembetulan || "0");
-
-    // 3. Simpan ke Database Neon
-    await query(
-      `INSERT INTO spt_logs 
-       (jenis_pajak, jenis_surat, masa_pajak, tahun_pajak, pembetulan, no_objek, status, nominal, bpe_number) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [
-        data.jenisPajak,
-        data.jenisSurat,
-        data.masa,
-        data.tahun,
-        pembetulanVal,
-        data.noObjek,
-        statusAwal,
-        nominalVal,
-        bpe,
-      ],
+    // Hitung total PPh dari tabel bupot_21_logs
+    const hitungRes = await query(
+      `SELECT SUM(pph_amount) as total 
+       FROM bupot_21_logs 
+       WHERE masa_pajak = $1 AND status = 'Terbit'`,
+      [masaLengkap],
     );
 
-    // 4. Revalidate Cache
-    revalidatePath("/dashboard/spt");
-    revalidatePath("/dashboard/simulasi/coretax");
+    const totalPph = Number(hitungRes.rows[0].total || 0);
 
-    return { success: true, message: "Data Berhasil Disimpan!", bpe: bpe };
+    // B. Simpan Header SPT ke database
+    await query(
+      `INSERT INTO spt_logs (jenis_spt, masa, tahun, pembetulan, status, nominal)
+       VALUES ($1, $2, $3, $4, 'Draft', $5)`,
+      [data.jenisPajak, data.masa, data.tahun, data.pembetulan, totalPph],
+    );
+
+    revalidatePath("/dashboard/spt");
+    return {
+      success: true,
+      message: `Konsep Terbentuk. Total PPh: Rp ${totalPph.toLocaleString("id-ID")}`,
+    };
   } catch (error) {
-    console.error("Error create SPT:", error);
-    return { success: false, message: "Terjadi kesalahan server (Database)." };
+    console.error("Gagal simpan SPT:", error);
+    return { success: false, message: "Gagal menyimpan draft SPT." };
+  }
+}
+
+// --- 3. HAPUS SPT ---
+export async function deleteSptAction(id: number) {
+  try {
+    await query("DELETE FROM spt_logs WHERE id = $1", [id]);
+    revalidatePath("/dashboard/spt");
+    return { success: true, message: "SPT berhasil dihapus." };
+  } catch (error) {
+    return { success: false, message: "Gagal menghapus SPT." };
+  }
+}
+
+// --- 4. AMBIL DETAIL SPT (UNTUK TABEL LAMPIRAN) ---
+export async function getSptDetailAction(masa: string, tahun: string) {
+  try {
+    const masaLengkap = `${masa} ${tahun}`;
+
+    // Ambil rincian Bukti Potong
+    const bupotRes = await query(
+      `SELECT * FROM bupot_21_logs 
+         WHERE masa_pajak = $1 AND status = 'Terbit'`,
+      [masaLengkap],
+    );
+
+    const listBuktiPotong = bupotRes.rows.map((row) => ({
+      npwp: row.npwp,
+      nama: row.nama_wp,
+      buktiPotong: row.bupot_id,
+      bruto: Number(row.bruto),
+      pph: Number(row.pph_amount),
+      kode: row.kode_objek,
+    }));
+
+    // Hitung Ringkasan untuk Induk
+    const pegawaiTetap = listBuktiPotong
+      .filter((i) => i.kode === "21-100-01")
+      .reduce((sum, i) => sum + i.pph, 0);
+
+    const pensiun = listBuktiPotong
+      .filter((i) => i.kode === "21-100-02")
+      .reduce((sum, i) => sum + i.pph, 0);
+
+    const tidakTetap = listBuktiPotong
+      .filter((i) => i.kode === "21-100-03")
+      .reduce((sum, i) => sum + i.pph, 0);
+
+    return {
+      success: true,
+      data: {
+        pegawaiTetap,
+        pensiun,
+        tidakTetap,
+        listBuktiPotong,
+      },
+    };
+  } catch (error) {
+    return { success: false, message: "Gagal ambil detail." };
   }
 }

@@ -10,6 +10,7 @@ import {
   History,
   Search,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function TerPage() {
   const [data, setData] = useState<any[]>([]);
@@ -45,11 +46,22 @@ export default function TerPage() {
     const res = await calculateTerAction(formData);
 
     setIsLoading(false);
-    if (res.success) {
+
+    // PERBAIKAN: Tambahkan pengecekan '&& res.hasil' agar TypeScript tidak error
+    if (res.success && res.hasil) {
       setResult(res.hasil);
       loadData();
+
+      // Tampilkan Notifikasi Sukses
+      toast.success("Perhitungan Berhasil!", {
+        description: `PPh Terutang: Rp ${res.hasil.pph.toLocaleString("id-ID")}`,
+        duration: 4000,
+      });
     } else {
-      alert("Gagal: " + res.message);
+      // Tampilkan Notifikasi Gagal
+      toast.error("Gagal Menghitung", {
+        description: res.message,
+      });
     }
   };
 
@@ -57,6 +69,7 @@ export default function TerPage() {
   const handleReset = () => {
     setFormData({ nama: "", nik: "", ptkp: "TK/0", bruto: "" });
     setResult(null);
+    toast.info("Formulir direset.");
   };
 
   return (
@@ -81,7 +94,7 @@ export default function TerPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="text-sm text-gray-500 hover:text-indigo-600 flex items-center gap-1"
+              className="text-sm text-gray-500 hover:text-indigo-600 flex items-center gap-1 transition-colors"
             >
               <RotateCcw size={14} /> Reset
             </button>
@@ -103,7 +116,7 @@ export default function TerPage() {
                     required
                     type="text"
                     placeholder="Masukkan Nama"
-                    className="w-full border rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     value={formData.nama}
                     onChange={(e) =>
                       setFormData({ ...formData, nama: e.target.value })
@@ -122,7 +135,7 @@ export default function TerPage() {
                   type="text"
                   placeholder="16 Digit NIK"
                   maxLength={16}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   value={formData.nik}
                   onChange={(e) =>
                     setFormData({ ...formData, nik: e.target.value })
@@ -138,7 +151,7 @@ export default function TerPage() {
                   Status PTKP
                 </label>
                 <select
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white transition-all"
                   value={formData.ptkp}
                   onChange={(e) =>
                     setFormData({ ...formData, ptkp: e.target.value })
@@ -189,7 +202,7 @@ export default function TerPage() {
                     required
                     type="number"
                     placeholder="0"
-                    className="w-full border rounded-lg pl-10 pr-3 py-2 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border rounded-lg pl-10 pr-3 py-2 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                     value={formData.bruto}
                     onChange={(e) =>
                       setFormData({ ...formData, bruto: e.target.value })
@@ -203,7 +216,7 @@ export default function TerPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 shadow-lg disabled:opacity-50 transition-all flex justify-center items-center gap-2"
+                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 shadow-lg disabled:opacity-50 transition-all flex justify-center items-center gap-2 active:scale-95"
               >
                 {isLoading ? (
                   "Menghitung..."
@@ -248,7 +261,7 @@ export default function TerPage() {
                     <div className="text-sm font-mono opacity-80">
                       Rp{" "}
                       {(parseFloat(formData.bruto) || 0).toLocaleString(
-                        "id-ID"
+                        "id-ID",
                       )}
                     </div>
                   </div>
@@ -286,7 +299,7 @@ export default function TerPage() {
             <input
               type="text"
               placeholder="Cari Nama..."
-              className="pl-8 pr-3 py-1.5 rounded-lg border border-gray-300 text-sm w-48 focus:ring-1 focus:ring-indigo-500"
+              className="pl-8 pr-3 py-1.5 rounded-lg border border-gray-300 text-sm w-48 focus:ring-1 focus:ring-indigo-500 outline-none"
             />
             <Search
               size={14}
@@ -319,7 +332,7 @@ export default function TerPage() {
                 </tr>
               ) : (
                 data.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-3 text-gray-500 text-xs">
                       {item.tanggal?.split(" ")[0]}
                     </td>

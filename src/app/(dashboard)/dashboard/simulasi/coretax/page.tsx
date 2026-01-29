@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getSptListAction, createSptAction } from "@/actions/spt-action"; // Import Action
+import { getSptListAction, saveSptDraftAction } from "@/actions/spt-action"; // Import Action
 import {
   FileText,
   Wallet,
