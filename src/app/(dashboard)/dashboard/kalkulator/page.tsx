@@ -1,993 +1,1232 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
-  Globe2,
+  Globe,
   TrendingDown,
   Receipt,
   Car,
   Calculator,
-  ArrowLeft,
-  ArrowRight,
   Plus,
   Trash2,
-  Info,
+  X,
+  RotateCcw,
 } from "lucide-react";
+import { toast } from "sonner";
 
-// --- UTILITIES ---
-const formatNumber = (num: string | number) => {
-  if (!num) return "";
-  const str = num.toString().replace(/\D/g, "");
-  return str.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+// --- HELPER FORMATTING ---
+const formatRupiah = (num: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(num);
 };
 
-const parseNumber = (text: string | number) => {
-  if (!text) return 0;
-  return parseFloat(text.toString().replace(/\./g, ""));
+const formatNumberDots = (value: string | number) => {
+  if (!value) return "";
+  const rawValue = value.toString().replace(/\D/g, "");
+  return rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-const calculatorMenus = [
-  {
-    id: "badan",
-    title: "PPh Badan",
-    desc: "Hitung PPh Badan (Tarif Umum / Fasilitas 31E / UMKM PP 55)",
-    icon: Building2,
-    color: "bg-blue-600",
-  },
-  {
-    id: "kredit",
-    title: "Kredit Pajak LN",
-    desc: "Hitung Kredit PPh Pasal 24 per Negara (Ordinary Credit)",
-    icon: Globe2,
-    color: "bg-emerald-600",
-  },
-  {
-    id: "susut",
-    title: "Penyusutan",
-    desc: "Simulasi Penyusutan Fiskal (Garis Lurus & Saldo Menurun)",
-    icon: TrendingDown,
-    color: "bg-indigo-600",
-  },
-  {
-    id: "ppn",
-    title: "PPN & PPnBM",
-    desc: "Hitung PPN (Tarif Efektif 12%) & PPnBM",
-    icon: Receipt,
-    color: "bg-purple-600",
-  },
-  {
-    id: "pkb",
-    title: "Pajak Kendaraan",
-    desc: "Estimasi PKB & Opsen Pajak (UU HKPD)",
-    icon: Car,
-    color: "bg-orange-600",
-  },
-];
+const parseNumber = (value: string) => {
+  return parseInt(value.replace(/\./g, "")) || 0;
+};
 
-export default function KalkulatorPage() {
-  const [activeView, setActiveView] = useState("menu");
+export default function TaxCalculatorPage() {
+  const [activeTab, setActiveTab] = useState<
+    "BADAN" | "KPLN" | "PENYUSUTAN" | "PPN" | "PKB"
+  >("BADAN");
 
-  // --- STATE PPH BADAN ---
-  const [badan, setBadan] = useState({ jenis: "UMUM", omset: "", pkp: "" });
-  const [hasilBadan, setHasilBadan] = useState<any>(null);
-
-  // --- STATE KREDIT LN ---
-  const [kplnDn, setKplnDn] = useState("");
-  const [kplnTarif, setKplnTarif] = useState("22");
-  const [kplnList, setKplnList] = useState<any[]>([]);
-  const [kplnForm, setKplnForm] = useState({
-    negara: "Singapura",
-    neto: "",
-    pajak: "",
-  });
-  const [hasilKpln, setHasilKpln] = useState<any>(null);
-
-  // --- STATE PENYUSUTAN ---
-  const [susut, setSusut] = useState({
-    sptYear: "2025",
-    buyYear: "2024",
-    buyMonth: "1",
-    price: "",
-    type: "HARTA", // HARTA | BANGUNAN
-    group: "1",
-    method: "GL",
-  });
-  const [hasilSusut, setHasilSusut] = useState<any>(null);
-
-  // --- STATE PPN ---
-  const [ppn, setPpn] = useState({ jenis: "UMUM", dpp: "", tarif: "12" });
-  const [hasilPpn, setHasilPpn] = useState<any>(null);
-
-  // --- STATE PKB ---
-  const [pkb, setPkb] = useState({
-    jenis: "MOBIL",
-    prov: "LAIN",
-    urutan: "1",
-    njkb: "",
-    bobot: "1",
-    swdkllj: "143.000",
-  });
-  const [hasilPkb, setHasilPkb] = useState<any>(null);
-
-  // ==================== LOGIC 1: PPH BADAN ====================
-  const hitungBadan = () => {
-    const omset = parseNumber(badan.omset);
-    const pkp = parseNumber(badan.pkp);
-    let pph = 0;
-    let ket = "";
-    let detail = "";
-
-    if (badan.jenis === "UMKM") {
-      pph = Math.floor(omset * 0.005);
-      ket = "Tarif Final UMKM 0.5% (PP 55/2022)";
-      detail = "Dihitung dari Peredaran Bruto";
-    } else if (badan.jenis === "TBK") {
-      pph = Math.floor(pkp * 0.19);
-      ket = "Tarif Diskon Tbk (19%)";
-      detail = "Diskon 3% dari tarif normal 22%";
-    } else {
-      // WP BADAN UMUM (Fasilitas 31E)
-      if (omset <= 4800000000) {
-        pph = Math.floor(pkp * 0.11); // 50% x 22%
-        ket = "Fasilitas Pasal 31E (Full)";
-        detail = "Seluruh PKP mendapat diskon tarif 50%";
-      } else if (omset <= 50000000000) {
-        const pkpFasilitas = (4800000000 / omset) * pkp;
-        const pkpNon = pkp - pkpFasilitas;
-        const pphFas = pkpFasilitas * 0.11;
-        const pphNon = pkpNon * 0.22;
-        pph = Math.floor(pphFas + pphNon);
-        ket = "Fasilitas Pasal 31E (Proporsional)";
-        detail = `Fasilitas: Rp ${Math.floor(pphFas).toLocaleString(
-          "id-ID"
-        )} | Non-Fas: Rp ${Math.floor(pphNon).toLocaleString("id-ID")}`;
-      } else {
-        pph = Math.floor(pkp * 0.22);
-        ket = "Tarif Umum Pasal 17 (22%)";
-        detail = "Omset > 50M tidak mendapat fasilitas";
-      }
-    }
-    setHasilBadan({ pph, ket, detail });
-  };
-
-  // ==================== LOGIC 2: KREDIT LN (ORDINARY CREDIT) ====================
-  const addKpln = () => {
-    if (!kplnForm.neto) return alert("Isi Penghasilan Neto LN!");
-    setKplnList([...kplnList, { ...kplnForm, id: Date.now() }]);
-    setKplnForm({ ...kplnForm, neto: "", pajak: "" }); // Reset input
-  };
-
-  const hitungKreditTotal = () => {
-    const netoDn = parseNumber(kplnDn);
-    const tarif = parseFloat(kplnTarif) / 100;
-
-    // 1. Total Penghasilan
-    const totalNetoLn = kplnList.reduce(
-      (acc, curr) => acc + parseNumber(curr.neto),
-      0
-    );
-    let totalPkp = netoDn + totalNetoLn;
-    if (totalPkp < 0) totalPkp = 0; // Rugi
-
-    // 2. PPh Terutang
-    const pphTerutang = Math.floor(totalPkp * tarif);
-
-    // 3. Hitung Kredit Per Negara (Limit)
-    let totalKredit = 0;
-    const detailList = kplnList.map((item) => {
-      const netLn = parseNumber(item.neto);
-      const taxLn = parseNumber(item.pajak);
-
-      // Batas Max = (Neto Negara / Total PKP) * PPh Terutang
-      const maxKredit = totalPkp > 0 ? (netLn / totalPkp) * pphTerutang : 0;
-      const kreditDiakui = Math.min(taxLn, maxKredit);
-
-      totalKredit += kreditDiakui;
-      return { ...item, max: maxKredit, allowed: kreditDiakui };
-    });
-
-    setHasilKpln({ totalPkp, pphTerutang, totalKredit, detailList });
-  };
-
-  // ==================== LOGIC 3: PENYUSUTAN FISKAL ====================
-  const hitungSusut = () => {
-    const cost = parseNumber(susut.price);
-    const sptYear = parseInt(susut.sptYear);
-    const buyYear = parseInt(susut.buyYear);
-    const buyMonth = parseInt(susut.buyMonth);
-
-    // Tentukan Rate & Masa Manfaat
-    let rate = 0;
-    let masa = 0;
-
-    if (susut.type === "BANGUNAN") {
-      masa = susut.group === "PERMANEN" ? 20 : 10;
-      rate = susut.group === "PERMANEN" ? 0.05 : 0.1;
-      // Bangunan wajib GL
-    } else {
-      if (susut.group === "1") {
-        masa = 4;
-        rate = susut.method === "GL" ? 0.25 : 0.5;
-      }
-      if (susut.group === "2") {
-        masa = 8;
-        rate = susut.method === "GL" ? 0.125 : 0.25;
-      }
-      if (susut.group === "3") {
-        masa = 16;
-        rate = susut.method === "GL" ? 0.0625 : 0.125;
-      }
-      if (susut.group === "4") {
-        masa = 20;
-        rate = susut.method === "GL" ? 0.05 : 0.1;
-      }
-    }
-
-    let bookValue = cost;
-    let accumDepr = 0;
-    let currentExpense = 0;
-
-    // Loop dari tahun beli sampai tahun SPT
-    for (let y = buyYear; y <= sptYear; y++) {
-      let months = 12;
-      if (y === buyYear) months = 13 - buyMonth; // Pro-rate tahun pertama
-
-      let expense = 0;
-
-      if (bookValue > 0) {
-        if (susut.method === "GL" || susut.type === "BANGUNAN") {
-          // GL: (Harga x Tarif) x Bulan/12
-          expense = cost * rate * (months / 12);
-        } else {
-          // SM: (Nilai Buku x Tarif) x Bulan/12
-          expense = bookValue * rate * (months / 12);
-        }
-
-        // Cek agar tidak minus (terutama akhir masa manfaat)
-        if (expense > bookValue) expense = bookValue;
-      }
-
-      bookValue -= expense;
-      accumDepr += expense;
-
-      if (y === sptYear) currentExpense = expense;
-    }
-
-    setHasilSusut({
-      year: sptYear,
-      expense: currentExpense,
-      accum: accumDepr,
-      book: bookValue,
-    });
-  };
-
-  // ==================== LOGIC 4: PPN ====================
-  const hitungPpn = () => {
-    const dpp = parseNumber(ppn.dpp);
-    const rate = parseFloat(ppn.tarif) / 100;
-    const tax = Math.floor(dpp * rate);
-
-    setHasilPpn({ tax: tax, total: dpp + tax });
-  };
-
-  // ==================== LOGIC 5: PKB (OPSEN) ====================
-  const hitungPkb = () => {
-    // Tarif Dasar per Provinsi (Simulasi Data)
-    const baseRates: any = {
-      DKI: 2.0,
-      JABAR: 1.75,
-      JATENG: 1.5,
-      JATIM: 1.5,
-      BALI: 1.5,
-      LAIN: 1.5,
-    };
-    const base = baseRates[pkb.prov] || 1.5;
-
-    // Progresif: +0.5% setiap kenaikan urutan
-    const urutan = parseInt(pkb.urutan);
-    const tarifFinal = base + (urutan - 1) * 0.5;
-
-    const njkb = parseNumber(pkb.njkb);
-    const bobot = parseFloat(pkb.bobot);
-
-    // Hitung
-    const pkbPokok = Math.floor(njkb * bobot * (tarifFinal / 100));
-    const opsen = Math.floor(pkbPokok * 0.66); // UU HKPD Opsen 66%
-    const swdkllj = parseNumber(pkb.swdkllj);
-    const admin = 200000; // Estimasi Admin STNK/TNKB
-
-    setHasilPkb({
-      pkbPokok,
-      opsen,
-      swdkllj,
-      admin,
-      total: pkbPokok + opsen + swdkllj + admin,
-      tarif: tarifFinal,
-    });
-  };
-
-  // --- WRAPPER KOMPONEN ---
-  const PageWrapper = ({ title, children }: any) => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-        <button
-          onClick={() => setActiveView("menu")}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-bold text-gray-600 transition"
-        >
-          <ArrowLeft size={16} /> Kembali ke Menu
-        </button>
-      </div>
-      {children}
-    </div>
-  );
-
-  // --- 1. MENU UTAMA ---
-  if (activeView === "menu") {
-    return (
-      <div className="space-y-8">
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Calculator className="text-blue-600" /> Pusat Kalkulator Pajak
+            <Calculator className="text-blue-600" /> Kalkulator Perpajakan
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Pilih jenis kalkulator perpajakan yang ingin Anda gunakan
+          <p className="text-sm text-gray-500">
+            Hitung estimasi pajak Anda dengan cepat dan akurat.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {calculatorMenus.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group flex flex-col justify-between h-full"
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+        <div className="flex space-x-2 min-w-max">
+          {[
+            { id: "BADAN", label: "PPh Badan", icon: Building2 },
+            { id: "KPLN", label: "Kredit LN", icon: Globe },
+            { id: "PENYUSUTAN", label: "Penyusutan", icon: TrendingDown },
+            { id: "PPN", label: "PPN", icon: Receipt },
+            { id: "PKB", label: "PKB (Kendaraan)", icon: Car },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all ${
+                activeTab === tab.id
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+              }`}
             >
-              <div>
-                <div
-                  className={`w-12 h-12 rounded-lg ${item.color} bg-opacity-10 flex items-center justify-center mb-4`}
-                >
-                  <item.icon
-                    className={`w-6 h-6 ${item.color.replace("bg-", "text-")}`}
-                  />
-                </div>
-                <h3 className="font-bold text-gray-800 mb-2 text-lg">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
-              <div className="text-sm font-bold text-blue-600 flex items-center gap-1 group-hover:gap-2 transition-all mt-auto">
-                Gunakan Kalkulator <ArrowRight size={16} />
-              </div>
-            </div>
+              <tab.icon size={18} />
+              {tab.label}
+            </button>
           ))}
         </div>
       </div>
-    );
-  }
 
-  // --- 2. PPH BADAN ---
-  if (activeView === "badan") {
-    return (
-      <PageWrapper title="Kalkulator PPh Badan">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Jenis Wajib Pajak
-              </label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 bg-white"
-                value={badan.jenis}
-                onChange={(e) => setBadan({ ...badan, jenis: e.target.value })}
-              >
-                <option value="UMUM">
-                  WP Badan Umum (Tarif Pasal 17 / 31E)
-                </option>
-                <option value="TBK">WP Badan Terbuka (Diskon Tarif 3%)</option>
-                <option value="UMKM">WP Badan UMKM (PP 55 - Final 0.5%)</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Peredaran Bruto (Omset)
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2"
-                placeholder="0"
-                value={badan.omset}
-                onChange={(e) =>
-                  setBadan({ ...badan, omset: formatNumber(e.target.value) })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Penghasilan Kena Pajak (PKP)
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2"
-                placeholder="0"
-                value={badan.pkp}
-                onChange={(e) =>
-                  setBadan({ ...badan, pkp: formatNumber(e.target.value) })
-                }
-                disabled={badan.jenis === "UMKM"}
-                style={{ opacity: badan.jenis === "UMKM" ? 0.5 : 1 }}
-              />
-            </div>
-            <button
-              onClick={hitungBadan}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700"
-            >
-              HITUNG PAJAK
-            </button>
-          </div>
-          <div className="bg-slate-900 text-white p-6 rounded-xl flex flex-col justify-center text-center">
-            {hasilBadan ? (
-              <div className="animate-in fade-in zoom-in duration-300">
-                <h6 className="text-blue-400 font-bold uppercase text-xs mb-1">
-                  PPh Badan Terutang
-                </h6>
-                <div className="text-4xl font-bold mb-3">
-                  Rp {hasilBadan.pph.toLocaleString("id-ID")}
-                </div>
-                <div className="bg-white/10 p-3 rounded text-left">
-                  <div className="text-xs text-gray-400 mb-1">Skema Tarif</div>
-                  <div className="font-bold text-sm mb-2">{hasilBadan.ket}</div>
-                  <div className="text-xs text-gray-300 italic">
-                    {hasilBadan.detail}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">Hasil perhitungan muncul di sini.</p>
-            )}
-          </div>
+      {/* Content Area */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 min-h-[500px]">
+        {activeTab === "BADAN" && <CalcBadan />}
+        {activeTab === "KPLN" && <CalcKpln />}
+        {activeTab === "PENYUSUTAN" && <CalcPenyusutan />}
+        {activeTab === "PPN" && <CalcPpn />}
+        {activeTab === "PKB" && <CalcPkb />}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 1. KALKULATOR PPh BADAN
+// ==========================================
+function CalcBadan() {
+  const [jenis, setJenis] = useState("UMUM");
+  const [omset, setOmset] = useState("");
+  const [pkp, setPkp] = useState("");
+  const [note, setNote] = useState(""); // Dynamic Note text
+  const [result, setResult] = useState<{
+    total: number;
+    skema: string;
+    tarif: string;
+  } | null>(null);
+
+  // Update deskripsi otomatis saat input berubah
+  useEffect(() => {
+    const valOmset = parseNumber(omset);
+    if (jenis === "UMKM") {
+      setNote("Menggunakan Tarif Final 0.5% dari Peredaran Bruto (PP 55).");
+    } else if (jenis === "TBK") {
+      setNote("Diskon Tarif 3% (Tarif 19%) dengan syarat tertentu.");
+    } else {
+      if (valOmset > 0 && valOmset <= 4800000000) {
+        setNote(
+          "Omset ≤ 4.8M: Mendapat Fasilitas Pengurangan Tarif 50% (Efektif 11%) atas seluruh PKP.",
+        );
+      } else if (valOmset > 4800000000 && valOmset <= 50000000000) {
+        setNote(
+          "Omset 4.8M - 50M: Mendapat Fasilitas Pasal 31E (Proporsional).",
+        );
+      } else {
+        setNote("Omset > 50M: Tarif Tunggal 22% (Tidak ada fasilitas).");
+      }
+    }
+  }, [omset, jenis]);
+
+  const handleReset = () => {
+    setJenis("UMUM");
+    setOmset("");
+    setPkp("");
+    setResult(null);
+    setNote("");
+  };
+
+  const calculate = () => {
+    const valOmset = parseNumber(omset);
+    const valPkp = parseNumber(pkp);
+    let pph = 0;
+    let skemaTxt = "";
+    let tarifEfektifTxt = "";
+
+    if (jenis === "UMKM") {
+      pph = Math.floor(valOmset * 0.005);
+      skemaTxt = "PP 55 Tahun 2022";
+      tarifEfektifTxt = "0.5% (Final)";
+    } else if (jenis === "TBK") {
+      pph = Math.floor(valPkp * 0.19);
+      skemaTxt = "Pasal 17 (Diskon Tbk)";
+      tarifEfektifTxt = "19%";
+    } else {
+      if (valOmset <= 4800000000) {
+        pph = Math.floor(valPkp * 0.11);
+        skemaTxt = "Pasal 31E (Full)";
+        tarifEfektifTxt = "11% (Fasilitas 50%)";
+      } else if (valOmset <= 50000000000) {
+        const pkpFasilitas = (4800000000 / valOmset) * valPkp;
+        const pkpNon = valPkp - pkpFasilitas;
+        pph = Math.floor(pkpFasilitas * 0.11 + pkpNon * 0.22);
+        skemaTxt = "Pasal 31E (Proporsional)";
+        tarifEfektifTxt = "Campuran (11% & 22%)";
+      } else {
+        pph = Math.floor(valPkp * 0.22);
+        skemaTxt = "Pasal 17 (Tarif Tunggal)";
+        tarifEfektifTxt = "22%";
+      }
+    }
+    setResult({ total: pph, skema: skemaTxt, tarif: tarifEfektifTxt });
+  };
+
+  return (
+    <div className="grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-4">
+        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+          FORMULIR PPh BADAN{" "}
+          <span className="text-slate-400 font-normal">
+            | Sesuai UU HPP & PP 55 Tahun 2022
+          </span>
         </div>
-      </PageWrapper>
-    );
-  }
-
-  // --- 3. KREDIT LN (ORDINARY CREDIT) ---
-  if (activeView === "kredit") {
-    return (
-      <PageWrapper title="Kredit PPh Pasal 24 (Luar Negeri)">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h6 className="font-bold text-gray-800 mb-3 border-bottom pb-2">
-              1. Data Penghasilan
-            </h6>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div>
-                <label className="text-xs font-bold text-gray-600">
-                  Neto Dalam Negeri (Rp)
-                </label>
-                <input
-                  className="w-full border rounded px-2 py-1.5"
-                  value={kplnDn}
-                  onChange={(e) => setKplnDn(formatNumber(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600">
-                  Tarif Badan (%)
-                </label>
-                <input
-                  className="w-full border rounded px-2 py-1.5"
-                  type="number"
-                  value={kplnTarif}
-                  onChange={(e) => setKplnTarif(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <h6 className="font-bold text-gray-800 mb-3 border-bottom pb-2 mt-4">
-              2. Tambah Negara Sumber
-            </h6>
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <select
-                className="border rounded px-2 py-1.5 text-sm"
-                value={kplnForm.negara}
-                onChange={(e) =>
-                  setKplnForm({ ...kplnForm, negara: e.target.value })
-                }
-              >
-                <option>Singapura</option>
-                <option>Malaysia</option>
-                <option>Amerika Serikat</option>
-                <option>Australia</option>
-                <option>Lainnya</option>
-              </select>
-              <input
-                className="border rounded px-2 py-1.5 text-sm"
-                placeholder="Neto LN"
-                value={kplnForm.neto}
-                onChange={(e) =>
-                  setKplnForm({
-                    ...kplnForm,
-                    neto: formatNumber(e.target.value),
-                  })
-                }
-              />
-              <input
-                className="border rounded px-2 py-1.5 text-sm"
-                placeholder="Pajak LN"
-                value={kplnForm.pajak}
-                onChange={(e) =>
-                  setKplnForm({
-                    ...kplnForm,
-                    pajak: formatNumber(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <button
-              onClick={addKpln}
-              className="btn btn-sm w-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 mb-4"
-            >
-              + Tambah Negara
-            </button>
-
-            <table className="w-full text-xs text-left mb-4">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2">Negara</th>
-                  <th className="p-2 text-right">Neto</th>
-                  <th className="p-2 text-right">Pajak</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {kplnList.map((item, idx) => (
-                  <tr key={item.id} className="border-b">
-                    <td className="p-2">{item.negara}</td>
-                    <td className="p-2 text-right">{item.neto}</td>
-                    <td className="p-2 text-right">{item.pajak}</td>
-                    <td
-                      className="p-2 text-center text-red-500 cursor-pointer"
-                      onClick={() => {
-                        const newList = [...kplnList];
-                        newList.splice(idx, 1);
-                        setKplnList(newList);
-                      }}
-                    >
-                      <Trash2 size={14} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <button
-              onClick={hitungKreditTotal}
-              className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold hover:bg-emerald-700"
-            >
-              HITUNG TOTAL KREDIT
-            </button>
-          </div>
-
-          <div className="bg-slate-900 text-white p-6 rounded-xl">
-            {hasilKpln ? (
-              <div className="space-y-4">
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400 text-sm">
-                    Total PKP (DN+LN)
-                  </span>
-                  <span className="font-bold">
-                    Rp {hasilKpln.totalPkp.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400 text-sm">
-                    Total PPh Terutang
-                  </span>
-                  <span className="font-bold">
-                    Rp {hasilKpln.pphTerutang.toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="bg-emerald-900/50 p-4 rounded border border-emerald-700/50 text-center">
-                  <div className="text-emerald-400 text-xs font-bold uppercase mb-1">
-                    Total Kredit PPh 24 Diakui
-                  </div>
-                  <div className="text-3xl font-bold text-white">
-                    Rp {hasilKpln.totalKredit.toLocaleString("id-ID")}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 pt-10">
-                Hasil perhitungan kredit akan muncul di sini.
-              </div>
-            )}
-          </div>
-        </div>
-      </PageWrapper>
-    );
-  }
-
-  // --- 4. PENYUSUTAN ---
-  if (activeView === "susut") {
-    return (
-      <PageWrapper title="Simulasi Penyusutan Fiskal">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Tahun Pelaporan SPT
-              </label>
-              <input
-                type="number"
-                className="w-full border rounded px-3 py-2"
-                value={susut.sptYear}
-                onChange={(e) =>
-                  setSusut({ ...susut, sptYear: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Harga Perolehan
-              </label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                value={susut.price}
-                onChange={(e) =>
-                  setSusut({ ...susut, price: formatNumber(e.target.value) })
-                }
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Bulan & Tahun Beli
-              </label>
-              <div className="flex gap-1">
-                <select
-                  className="border rounded w-1/2"
-                  value={susut.buyMonth}
-                  onChange={(e) =>
-                    setSusut({ ...susut, buyMonth: e.target.value })
-                  }
-                >
-                  {[...Array(12)].map((_, i) => (
-                    <option key={i} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  className="border rounded w-1/2"
-                  value={susut.buyYear}
-                  onChange={(e) =>
-                    setSusut({ ...susut, buyYear: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Jenis Harta
-              </label>
-              <div className="flex gap-2">
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    type="radio"
-                    name="stype"
-                    checked={susut.type === "HARTA"}
-                    onChange={() =>
-                      setSusut({ ...susut, type: "HARTA", method: "GL" })
-                    }
-                  />{" "}
-                  Harta
-                </label>
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    type="radio"
-                    name="stype"
-                    checked={susut.type === "BANGUNAN"}
-                    onChange={() =>
-                      setSusut({
-                        ...susut,
-                        type: "BANGUNAN",
-                        group: "PERMANEN",
-                        method: "GL",
-                      })
-                    }
-                  />{" "}
-                  Bangunan
-                </label>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Kelompok
-              </label>
-              <select
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={susut.group}
-                onChange={(e) => setSusut({ ...susut, group: e.target.value })}
-              >
-                {susut.type === "HARTA" ? (
-                  <>
-                    <option value="1">Kelompok 1 (4 Tahun)</option>
-                    <option value="2">Kelompok 2 (8 Tahun)</option>
-                    <option value="3">Kelompok 3 (16 Tahun)</option>
-                    <option value="4">Kelompok 4 (20 Tahun)</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="PERMANEN">Permanen (20 Tahun)</option>
-                    <option value="TIDAK_PERMANEN">
-                      Tidak Permanen (10 Tahun)
-                    </option>
-                  </>
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-gray-600 block mb-1">
-                Metode
-              </label>
-              <select
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={susut.method}
-                onChange={(e) => setSusut({ ...susut, method: e.target.value })}
-                disabled={susut.type === "BANGUNAN"}
-              >
-                <option value="GL">Garis Lurus (Straight Line)</option>
-                {susut.type === "HARTA" && (
-                  <option value="SM">Saldo Menurun (Double Declining)</option>
-                )}
-              </select>
-            </div>
-          </div>
-          <button
-            onClick={hitungSusut}
-            className="w-full bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700"
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Jenis Wajib Pajak <span className="text-red-500">*</span>
+          </label>
+          <select
+            className="w-full border p-2.5 rounded-lg bg-white"
+            value={jenis}
+            onChange={(e) => setJenis(e.target.value)}
           >
-            HITUNG BEBAN PENYUSUTAN
+            <option value="UMUM">
+              WP Badan Umum (Tarif Pasal 17 / Fasilitas 31E)
+            </option>
+            <option value="TBK">
+              WP Badan Terbuka (Tbk) - Diskon Tarif 3%
+            </option>
+            <option value="UMKM">WP Badan UMKM (PP 55 - Final 0.5%)</option>
+          </select>
+        </div>
+
+        {note && (
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100 italic">
+            {note}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Peredaran Bruto (Omset) <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+              Rp
+            </span>
+            <input
+              type="text"
+              className="w-full border p-2.5 pl-10 rounded-lg"
+              placeholder="0"
+              value={formatNumberDots(omset)}
+              onChange={(e) => setOmset(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {jenis !== "UMKM" && (
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Penghasilan Kena Pajak (PKP){" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+                Rp
+              </span>
+              <input
+                type="text"
+                className="w-full border p-2.5 pl-10 rounded-lg"
+                placeholder="0"
+                value={formatNumberDots(pkp)}
+                onChange={(e) => setPkp(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleReset}
+            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+          >
+            <RotateCcw size={18} /> RESET
+          </button>
+          <button
+            onClick={calculate}
+            className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md transition-all"
+          >
+            HITUNG PAJAK
           </button>
         </div>
+      </div>
 
-        {hasilSusut && (
-          <div className="bg-slate-900 text-white p-6 rounded-xl flex justify-between items-center shadow-lg">
-            <div className="text-center">
-              <div className="text-gray-400 text-xs uppercase mb-1">
-                Beban Penyusutan Th {hasilSusut.year}
+      {/* OUTPUT PPH BADAN */}
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
+        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+          PPh BADAN TERUTANG
+        </h6>
+        <div className="text-3xl font-bold mb-6 text-yellow-400">
+          {result ? formatRupiah(result.total) : "Rp 0"}
+        </div>
+
+        {result && (
+          <div className="w-full text-left space-y-4">
+            <div className="bg-white/10 p-3 rounded-lg border border-white/10">
+              <div className="text-xs text-slate-400 uppercase font-bold mb-1">
+                Skema Tarif
               </div>
+              <div className="font-bold text-white text-sm">{result.skema}</div>
+            </div>
+            <div className="bg-white/10 p-3 rounded-lg border border-white/10">
+              <div className="text-xs text-slate-400 uppercase font-bold mb-1">
+                Tarif Efektif
+              </div>
+              <div className="font-bold text-white text-sm">{result.tarif}</div>
+            </div>
+          </div>
+        )}
+        {!result && (
+          <p className="text-xs text-slate-500 italic">
+            Hasil perhitungan akan muncul di sini.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 2. KALKULATOR KREDIT LN (PPh 24)
+// ==========================================
+function CalcKpln() {
+  const [netoDn, setNetoDn] = useState("");
+  const [tarif, setTarif] = useState(22);
+  const [items, setItems] = useState<
+    { id: number; negara: string; neto: string; pajak: string }[]
+  >([]);
+
+  const [formNegara, setFormNegara] = useState("");
+  const [formNeto, setFormNeto] = useState("");
+  const [formPajak, setFormPajak] = useState("");
+
+  const [result, setResult] = useState({ credit: 0, totalPkp: 0, totalTax: 0 });
+
+  const handleReset = () => {
+    setNetoDn("");
+    setTarif(22);
+    setItems([]);
+    setResult({ credit: 0, totalPkp: 0, totalTax: 0 });
+    toast.info("Data PPh 24 direset.");
+  };
+
+  const tambahNegara = () => {
+    if (!formNegara || !formNeto) return toast.error("Lengkapi data negara");
+    setItems([
+      ...items,
+      { id: Date.now(), negara: formNegara, neto: formNeto, pajak: formPajak },
+    ]);
+    setFormNegara("");
+    setFormNeto("");
+    setFormPajak("");
+  };
+
+  const hitung = () => {
+    const valNetoDn = parseNumber(netoDn);
+    const valTotalNetoLn = items.reduce(
+      (sum, i) => sum + parseNumber(i.neto),
+      0,
+    );
+    const totalPkp = valNetoDn + valTotalNetoLn;
+    const pphTerutang = totalPkp * (tarif / 100);
+
+    let totalKredit = 0;
+    items.forEach((i) => {
+      const valNeto = parseNumber(i.neto);
+      const valPajak = parseNumber(i.pajak);
+      const batas = (valNeto / totalPkp) * pphTerutang;
+      const kreditDiakui = Math.min(valPajak, batas);
+      totalKredit += kreditDiakui;
+    });
+
+    setResult({
+      credit: Math.floor(totalKredit),
+      totalPkp: Math.floor(totalPkp),
+      totalTax: Math.floor(pphTerutang),
+    });
+  };
+
+  return (
+    <div className="grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-6">
+        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+          KREDIT PAJAK LUAR NEGERI{" "}
+          <span className="text-slate-400 font-normal">
+            | Metode Ordinary Credit per Negara
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Penghasilan Neto Dalam Negeri (Rp){" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              className="w-full border p-2.5 rounded-lg"
+              value={formatNumberDots(netoDn)}
+              onChange={(e) => setNetoDn(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Tarif PPh Badan (%) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              className="w-full border p-2.5 rounded-lg"
+              value={tarif}
+              onChange={(e) => setTarif(Number(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-3">
+          <h6 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1">
+            <Plus size={14} /> TAMBAH SUMBER PENGHASILAN LN
+          </h6>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="md:col-span-1">
+              <select
+                className="w-full border p-2 rounded text-sm bg-white"
+                value={formNegara}
+                onChange={(e) => setFormNegara(e.target.value)}
+              >
+                <option value="">-- Pilih --</option>
+                {[
+                  "Singapura",
+                  "Malaysia",
+                  "Jepang",
+                  "Amerika Serikat",
+                  "Inggris",
+                  "Australia",
+                  "China",
+                  "Belanda",
+                  "Jerman",
+                  "Lainnya",
+                ].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-1">
+              <input
+                type="text"
+                placeholder="Neto LN (Rp)"
+                className="w-full border p-2 rounded text-sm"
+                value={formatNumberDots(formNeto)}
+                onChange={(e) => setFormNeto(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-1">
+              <input
+                type="text"
+                placeholder="Pajak LN (Rp)"
+                className="w-full border p-2 rounded text-sm"
+                value={formatNumberDots(formPajak)}
+                onChange={(e) => setFormPajak(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-1">
+              <button
+                onClick={tambahNegara}
+                className="w-full bg-blue-600 text-white p-2 rounded text-sm font-bold hover:bg-blue-700"
+              >
+                Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-xs">
+              <tr>
+                <th className="p-3">Negara</th>
+                <th className="p-3 text-right">Neto LN</th>
+                <th className="p-3 text-right">Pajak LN</th>
+                <th className="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {items.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="p-4 text-center text-gray-400 italic"
+                  >
+                    Belum ada data negara ditambahkan.
+                  </td>
+                </tr>
+              ) : (
+                items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="p-3">{item.negara}</td>
+                    <td className="p-3 text-right">
+                      {formatRupiah(parseNumber(item.neto))}
+                    </td>
+                    <td className="p-3 text-right">
+                      {formatRupiah(parseNumber(item.pajak))}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() =>
+                          setItems(items.filter((i) => i.id !== item.id))
+                        }
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleReset}
+            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+          >
+            <RotateCcw size={18} /> RESET
+          </button>
+          <button
+            onClick={hitung}
+            className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 shadow-md"
+          >
+            HITUNG KREDIT
+          </button>
+        </div>
+      </div>
+
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 shadow-xl flex flex-col justify-between border border-slate-700">
+        <div>
+          <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+            TOTAL KREDIT PPh 24
+          </h6>
+          <div className="text-3xl font-bold mb-6 text-yellow-400">
+            {formatRupiah(result.credit)}
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-white/10 p-3 rounded-lg border border-white/10">
+              <p className="text-xs text-slate-400 uppercase font-bold mb-1">
+                Total PKP
+              </p>
+              <p className="font-mono text-lg font-bold">
+                {formatRupiah(result.totalPkp)}
+              </p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-lg border border-white/10">
+              <p className="text-xs text-slate-400 uppercase font-bold mb-1">
+                Total PPh Terutang
+              </p>
+              <p className="font-mono text-lg font-bold">
+                {formatRupiah(result.totalTax)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 3. KALKULATOR PENYUSUTAN
+// ==========================================
+function CalcPenyusutan() {
+  const [harga, setHarga] = useState("");
+  const [tahunSpt, setTahunSpt] = useState(2025);
+  const [akhirBuku, setAkhirBuku] = useState("12");
+  const [beliBulan, setBeliBulan] = useState("1");
+  const [beliTahun, setBeliTahun] = useState("2024");
+
+  const [jenisHarta, setJenisHarta] = useState<"HARTA" | "BANGUNAN">("HARTA");
+  const [kelompok, setKelompok] = useState("1");
+  const [metode, setMetode] = useState("GL");
+
+  const [summary, setSummary] = useState<{
+    beban: number;
+    akum: number;
+    buku: number;
+  } | null>(null);
+  const [hasil, setHasil] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (jenisHarta === "BANGUNAN") {
+      setKelompok("PERMANEN");
+      setMetode("GL");
+    } else {
+      setKelompok("1");
+    }
+  }, [jenisHarta]);
+
+  const handleReset = () => {
+    setHarga("");
+    setTahunSpt(2025);
+    setJenisHarta("HARTA");
+    setKelompok("1");
+    setMetode("GL");
+    setSummary(null);
+    setHasil([]);
+    toast.info("Penyusutan direset.");
+  };
+
+  const hitung = () => {
+    const cost = parseNumber(harga);
+    let masaManfaat = 0;
+
+    // Mapping Masa Manfaat
+    if (jenisHarta === "HARTA") {
+      if (kelompok === "1") masaManfaat = 4;
+      if (kelompok === "2") masaManfaat = 8;
+      if (kelompok === "3") masaManfaat = 16;
+      if (kelompok === "4") masaManfaat = 20;
+    } else {
+      if (kelompok === "PERMANEN") masaManfaat = 20;
+      if (kelompok === "NON_PERMANEN") masaManfaat = 10;
+    }
+
+    let tarif = 1 / masaManfaat;
+    if (metode === "SM") tarif = tarif * 2;
+
+    let nilaiBuku = cost;
+    const temp = [];
+    let akumulasi = 0;
+    let bebanTahunIni = 0;
+
+    // Simple Annual Calculation Loop
+    // Catatan: Ini simulasi tahunan sederhana. Untuk akurasi bulanan (pro-rate) perlu logic lebih kompleks.
+    // Asumsi: Penyusutan dihitung penuh/proporsional tahunan untuk kemudahan UI.
+
+    for (let i = 1; i <= masaManfaat; i++) {
+      let penyusutan = 0;
+      if (metode === "GL") {
+        penyusutan = cost / masaManfaat;
+      } else {
+        penyusutan = nilaiBuku * tarif;
+        if (i === masaManfaat) penyusutan = nilaiBuku;
+      }
+
+      // Cek apakah tahun ini adalah Tahun SPT Pelaporan
+      // Logic sederhana: Beli 2024. Tahun ke-1 = 2024/2025 (tergantung bulan).
+      // Disini kita simplifikasi: Baris 1 = Tahun Beli.
+      const tahunBerjalan = Number(beliTahun) + (i - 1);
+
+      if (tahunBerjalan === tahunSpt) {
+        bebanTahunIni = penyusutan;
+      }
+
+      nilaiBuku -= penyusutan;
+      // Jika sudah lewat tahun SPT, akumulasi berhenti dihitung untuk display
+      if (tahunBerjalan <= tahunSpt) {
+        akumulasi += penyusutan;
+      }
+
+      temp.push({
+        tahun: tahunBerjalan,
+        biaya: Math.floor(penyusutan),
+        buku: Math.floor(Math.max(0, nilaiBuku)),
+      });
+    }
+
+    setHasil(temp);
+    setSummary({
+      beban: Math.floor(bebanTahunIni),
+      akum: Math.floor(akumulasi),
+      buku: Math.floor(cost - akumulasi),
+    });
+  };
+
+  return (
+    <div className="grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-4">
+        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+          PENYUSUTAN FISKAL{" "}
+          <span className="text-slate-400 font-normal">
+            | Metode Garis Lurus & Saldo Menurun
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Tahun SPT Pelaporan
+            </label>
+            <input
+              type="number"
+              className="w-full border p-2.5 rounded-lg"
+              value={tahunSpt}
+              onChange={(e) => setTahunSpt(Number(e.target.value))}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Akhir Tahun Buku
+            </label>
+            <select
+              className="w-full border p-2.5 rounded-lg bg-white"
+              value={akhirBuku}
+              onChange={(e) => setAkhirBuku(e.target.value)}
+            >
+              <option value="12">Desember</option>
+              <option value="3">Maret</option>
+              <option value="6">Juni</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Harga Perolehan (Rp)
+          </label>
+          <input
+            type="text"
+            className="w-full border p-2.5 rounded-lg"
+            value={formatNumberDots(harga)}
+            onChange={(e) => setHarga(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Waktu Perolehan
+          </label>
+          <div className="flex gap-2">
+            <select
+              className="w-2/3 border p-2.5 rounded-lg bg-white"
+              value={beliBulan}
+              onChange={(e) => setBeliBulan(e.target.value)}
+            >
+              {[
+                "Januari",
+                "Februari",
+                "Maret",
+                "April",
+                "Mei",
+                "Juni",
+                "Juli",
+                "Agustus",
+                "September",
+                "Oktober",
+                "November",
+                "Desember",
+              ].map((m, i) => (
+                <option key={i} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              className="w-1/3 border p-2.5 rounded-lg"
+              value={beliTahun}
+              onChange={(e) => setBeliTahun(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Jenis Harta
+          </label>
+          <div className="flex gap-4">
+            <label
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "HARTA" ? "bg-blue-50 border-blue-500 text-blue-700" : "bg-white border-gray-200"}`}
+            >
+              <input
+                type="radio"
+                name="jenisHarta"
+                value="HARTA"
+                checked={jenisHarta === "HARTA"}
+                onChange={() => setJenisHarta("HARTA")}
+                className="hidden"
+              />
+              Harta Berwujud
+            </label>
+            <label
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "BANGUNAN" ? "bg-blue-50 border-blue-500 text-blue-700" : "bg-white border-gray-200"}`}
+            >
+              <input
+                type="radio"
+                name="jenisHarta"
+                value="BANGUNAN"
+                checked={jenisHarta === "BANGUNAN"}
+                onChange={() => setJenisHarta("BANGUNAN")}
+                className="hidden"
+              />
+              Bangunan
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Kelompok Harta
+          </label>
+          <select
+            className="w-full border p-2.5 rounded-lg bg-white"
+            value={kelompok}
+            onChange={(e) => setKelompok(e.target.value)}
+          >
+            {jenisHarta === "HARTA" ? (
+              <>
+                <option value="1">Kelompok 1 (4 Tahun - 25% / 50%)</option>
+                <option value="2">Kelompok 2 (8 Tahun - 12.5% / 25%)</option>
+                <option value="3">Kelompok 3 (16 Tahun - 6.25% / 12.5%)</option>
+                <option value="4">Kelompok 4 (20 Tahun - 5% / 10%)</option>
+              </>
+            ) : (
+              <>
+                <option value="PERMANEN">
+                  Kelompok Bangunan Permanen (20 Tahun - 5%)
+                </option>
+                <option value="NON_PERMANEN">
+                  Kelompok Bangunan Tidak Permanen (10 Tahun - 10%)
+                </option>
+              </>
+            )}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Metode Penyusutan
+          </label>
+          <select
+            className="w-full border p-2.5 rounded-lg bg-white"
+            value={metode}
+            onChange={(e) => setMetode(e.target.value)}
+            disabled={jenisHarta === "BANGUNAN"}
+          >
+            <option value="GL">Garis Lurus (Straight Line)</option>
+            {jenisHarta === "HARTA" && (
+              <option value="SM">Saldo Menurun (Declining Balance)</option>
+            )}
+          </select>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleReset}
+            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+          >
+            <RotateCcw size={18} /> RESET
+          </button>
+          <button
+            onClick={hitung}
+            className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 shadow-md"
+          >
+            HITUNG PENYUSUTAN
+          </button>
+        </div>
+      </div>
+
+      {/* OUTPUT PENYUSUTAN (SESUAI PERMINTAAN) */}
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col border border-slate-700 shadow-xl h-fit">
+        {!summary ? (
+          <div className="h-40 flex flex-col items-center justify-center text-slate-500 italic">
+            <TrendingDown size={32} className="mb-2 opacity-50" />
+            Hasil perhitungan akan muncul di sini.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-1">
+                BEBAN PENYUSUTAN TAHUN {tahunSpt}
+              </h6>
               <div className="text-3xl font-bold text-yellow-400">
-                Rp {hasilSusut.expense.toLocaleString("id-ID")}
+                {formatRupiah(summary.beban)}
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-300">
-                Akumulasi: Rp {hasilSusut.accum.toLocaleString("id-ID")}
+
+            <div className="pt-4 border-t border-slate-700 space-y-4">
+              <div>
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">
+                  Akumulasi Penyusutan
+                </div>
+                <div className="text-lg font-bold text-white">
+                  {formatRupiah(summary.akum)}
+                </div>
               </div>
-              <div className="text-sm text-gray-300">
-                Nilai Buku: Rp {hasilSusut.book.toLocaleString("id-ID")}
+              <div>
+                <div className="text-xs text-slate-400 font-bold uppercase mb-1">
+                  Nilai Buku Akhir
+                </div>
+                <div className="text-lg font-bold text-white">
+                  {formatRupiah(summary.buku)}
+                </div>
               </div>
             </div>
           </div>
         )}
-      </PageWrapper>
-    );
-  }
 
-  // --- 5. PPN ---
-  if (activeView === "ppn") {
-    return (
-      <PageWrapper title="Kalkulator PPN (UU HPP)">
-        <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-          <div className="mb-4">
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Jenis Faktur / Transaksi
-            </label>
-            <select
-              className="w-full border rounded px-3 py-2"
-              value={ppn.jenis}
-              onChange={(e) => {
-                const j = e.target.value;
-                let t = "12";
-                if (j === "EKSPOR") t = "0";
-                if (j === "FINAL") t = "2.4"; // 20% x 12%
-                if (j === "TERTENTU") t = "1.1";
-                setPpn({ ...ppn, jenis: j, tarif: t });
-              }}
-            >
-              <option value="UMUM">Faktur Pajak Umum (12%)</option>
-              <option value="EKSPOR">Ekspor BKP/JKP (0%)</option>
-              <option value="FINAL">
-                KMS / Besaran Tertentu (Efektif 2.4%)
-              </option>
-              <option value="TERTENTU">Kendaraan Bekas (1.1%)</option>
-            </select>
+        {/* Tabel Detail dibawah summary card (Opsional, disembunyikan jika tidak diminta spesifik di output akhir, tapi berguna) */}
+        {hasil.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-slate-700">
+            <div className="text-xs text-slate-500 uppercase font-bold mb-2">
+              Rincian Per Tahun
+            </div>
+            <div className="max-h-40 overflow-y-auto pr-1">
+              <table className="w-full text-xs text-left text-slate-300">
+                <tbody>
+                  {hasil.map((row) => (
+                    <tr key={row.tahun} className="border-b border-slate-800">
+                      <td className="py-1">{row.tahun}</td>
+                      <td className="py-1 text-right">
+                        {formatNumberDots(row.biaya)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Dasar Pengenaan Pajak (DPP)
-            </label>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 4. KALKULATOR PPN
+// ==========================================
+function CalcPpn() {
+  const [dpp, setDpp] = useState("");
+  const [rate, setRate] = useState(12);
+  const [jenis, setJenis] = useState("UMUM");
+  const [result, setResult] = useState(0);
+
+  const handleReset = () => {
+    setDpp("");
+    setRate(12);
+    setJenis("UMUM");
+    setResult(0);
+    toast.info("PPN direset.");
+  };
+
+  return (
+    <div className="grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-4">
+        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+          KALKULATOR PPN{" "}
+          <span className="text-slate-400 font-normal">
+            | UU HPP - Tarif Efektif 12% (2025)
+          </span>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Jenis Pengenaan PPN <span className="text-red-500">*</span>
+          </label>
+          <select
+            className="w-full border p-2.5 rounded-lg bg-white"
+            value={jenis}
+            onChange={(e) => setJenis(e.target.value)}
+          >
+            <option value="UMUM">Tarif Umum (12%)</option>
+            <option value="EKSPOR">Ekspor BKP/JKP (0%)</option>
+            <option value="BESARAN">
+              Besaran Tertentu (Kendaraan Bekas, Emas, dll)
+            </option>
+            <option value="KMS">PPN Membangun Sendiri (KMS)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Dasar Pengenaan Pajak (DPP) <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+              Rp
+            </span>
             <input
-              className="w-full border rounded px-3 py-2 text-lg font-mono"
-              value={ppn.dpp}
-              onChange={(e) =>
-                setPpn({ ...ppn, dpp: formatNumber(e.target.value) })
-              }
+              type="text"
+              className="w-full border p-2.5 pl-10 rounded-lg"
+              placeholder="0"
+              value={formatNumberDots(dpp)}
+              onChange={(e) => setDpp(e.target.value)}
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Tarif Berlaku (%)
-            </label>
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Tarif PPN (%)
+          </label>
+          <div className="relative">
             <input
               type="number"
-              className="w-full border rounded px-3 py-2 bg-gray-50"
-              value={ppn.tarif}
-              readOnly
+              className="w-full border p-2.5 pr-10 rounded-lg"
+              value={rate}
+              onChange={(e) => setRate(Number(e.target.value))}
             />
+            <span className="absolute right-3 top-2.5 text-gray-500 font-bold">
+              %
+            </span>
           </div>
+          <p className="text-xs text-orange-600 mt-1">
+            *Tarif standar 12% berlaku mulai 1 Januari 2025.
+          </p>
+        </div>
+
+        <div className="flex gap-3 pt-2">
           <button
-            onClick={hitungPpn}
-            className="w-full bg-purple-600 text-white py-3 rounded font-bold hover:bg-purple-700 shadow-lg"
+            onClick={handleReset}
+            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+          >
+            <RotateCcw size={18} /> RESET
+          </button>
+          <button
+            onClick={() =>
+              setResult(Math.floor(parseNumber(dpp) * (rate / 100)))
+            }
+            className="flex-1 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 shadow-md"
           >
             HITUNG PPN
           </button>
-
-          {hasilPpn && (
-            <div className="mt-6 p-4 bg-purple-50 border border-purple-100 rounded-xl text-center">
-              <div className="text-purple-600 text-xs font-bold uppercase mb-1">
-                PPN Harus Dipungut
-              </div>
-              <div className="text-4xl font-bold text-purple-900">
-                Rp {hasilPpn.tax.toLocaleString("id-ID")}
-              </div>
-              <div className="text-sm text-gray-500 mt-2">
-                Total Tagihan: Rp {hasilPpn.total.toLocaleString("id-ID")}
-              </div>
-            </div>
-          )}
         </div>
-      </PageWrapper>
-    );
-  }
+      </div>
 
-  // --- 6. PKB (PAJAK KENDARAAN) ---
-  if (activeView === "pkb") {
-    return (
-      <PageWrapper title="Estimasi Pajak Kendaraan (UU HKPD)">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="text-xs font-bold text-gray-600">Jenis</label>
-                <select
-                  className="w-full border rounded px-2 py-2 text-sm"
-                  value={pkb.jenis}
-                  onChange={(e) => {
-                    const j = e.target.value;
-                    setPkb({
-                      ...pkb,
-                      jenis: j,
-                      bobot: j === "MOTOR" ? "1" : "1",
-                      swdkllj: j === "MOTOR" ? "35.000" : "143.000",
-                    });
-                  }}
-                >
-                  <option value="MOBIL">Mobil Penumpang</option>
-                  <option value="MOTOR">Sepeda Motor</option>
-                  <option value="TRUK">Truk / Pick Up</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600">
-                  Provinsi
-                </label>
-                <select
-                  className="w-full border rounded px-2 py-2 text-sm"
-                  value={pkb.prov}
-                  onChange={(e) => setPkb({ ...pkb, prov: e.target.value })}
-                >
-                  <option value="DKI">DKI Jakarta</option>
-                  <option value="JABAR">Jawa Barat</option>
-                  <option value="JATENG">Jawa Tengah</option>
-                  <option value="JATIM">Jawa Timur</option>
-                  <option value="BALI">Bali</option>
-                  <option value="LAIN">Lainnya</option>
-                </select>
-              </div>
-            </div>
-            <div className="mb-3">
-              <label className="text-xs font-bold text-gray-600">
-                Nilai Jual (NJKB)
-              </label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                value={pkb.njkb}
-                onChange={(e) =>
-                  setPkb({ ...pkb, njkb: formatNumber(e.target.value) })
-                }
-                placeholder="Cek di STNK..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="text-xs font-bold text-gray-600">
-                  Kepemilikan Ke-
-                </label>
-                <select
-                  className="w-full border rounded px-2 py-2 text-sm"
-                  value={pkb.urutan}
-                  onChange={(e) => setPkb({ ...pkb, urutan: e.target.value })}
-                >
-                  <option value="1">1 (Pertama)</option>
-                  <option value="2">2 (Kedua)</option>
-                  <option value="3">3 (Ketiga)</option>
-                  <option value="4">4 (Keempat)</option>
-                  <option value="5">5 (Kelima+)</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600">
-                  Bobot Koefisien
-                </label>
-                <input
-                  className="w-full border rounded px-2 py-2 text-sm"
-                  value={pkb.bobot}
-                  onChange={(e) => setPkb({ ...pkb, bobot: e.target.value })}
-                />
-              </div>
-            </div>
-            <button
-              onClick={hitungPkb}
-              className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold hover:bg-orange-700 shadow"
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
+        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+          PPN TERUTANG
+        </h6>
+        <div className="text-3xl font-bold mb-4 text-emerald-400">
+          {formatRupiah(result)}
+        </div>
+        <div className="bg-white/10 p-3 rounded-lg text-xs text-slate-300 border border-white/10">
+          Hasil perhitungan PPN muncul di sini.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 5. KALKULATOR PKB (KENDARAAN)
+// ==========================================
+function CalcPkb() {
+  const [njkb, setNjkb] = useState("");
+  const [provinsi, setProvinsi] = useState(2);
+  const [urutan, setUrutan] = useState(1);
+  const [bobot, setBobot] = useState(1.0);
+  const [swdkllj, setSwdkllj] = useState(143000);
+  const [result, setResult] = useState<{
+    total: number;
+    pokok: number;
+    opsen: number;
+  } | null>(null);
+
+  const handleReset = () => {
+    setNjkb("");
+    setProvinsi(2);
+    setUrutan(1);
+    setBobot(1.0);
+    setSwdkllj(143000);
+    setResult(null);
+    toast.info("PKB direset.");
+  };
+
+  const hitung = () => {
+    const valNjkb = parseNumber(njkb);
+    const tarifProgresif = (provinsi + (urutan - 1) * 0.5) / 100;
+
+    const pkbPokok = Math.floor(valNjkb * bobot * tarifProgresif);
+    const opsen = Math.floor(pkbPokok * 0.66); // UU HKPD Opsen 66%
+    const total = pkbPokok + opsen + swdkllj;
+
+    setResult({ total, pokok: pkbPokok, opsen });
+  };
+
+  return (
+    <div className="grid md:grid-cols-3 gap-8">
+      <div className="md:col-span-2 space-y-4">
+        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+          PAJAK KENDARAAN BERMOTOR (PKB){" "}
+          <span className="text-slate-400 font-normal">
+            | UU HKPD No. 1/2022 (Opsen 66%)
+          </span>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Jenis Kendaraan
+          </label>
+          <select
+            className="w-full border p-2.5 rounded-lg bg-white"
+            onChange={(e) => {
+              if (e.target.value === "MOTOR") setSwdkllj(35000);
+              else setSwdkllj(143000);
+            }}
+          >
+            <option value="MOBIL">Mobil Penumpang</option>
+            <option value="MOTOR">Sepeda Motor</option>
+            <option value="TRUK">Truk / Pick Up</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            NJKB (Nilai Jual) <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+              Rp
+            </span>
+            <input
+              type="text"
+              className="w-full border p-2.5 pl-10 rounded-lg"
+              placeholder="0"
+              value={formatNumberDots(njkb)}
+              onChange={(e) => setNjkb(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Provinsi (Tarif Daerah)
+            </label>
+            <select
+              className="w-full border p-2.5 rounded-lg bg-white"
+              value={provinsi}
+              onChange={(e) => setProvinsi(Number(e.target.value))}
             >
-              HITUNG ESTIMASI
-            </button>
+              <option value={2}>DKI Jakarta (2%)</option>
+              <option value={1.75}>Jawa Barat (1.75%)</option>
+              <option value={1.5}>Jawa Tengah (1.5%)</option>
+              <option value={1.5}>Jawa Timur (1.5%)</option>
+              <option value={1.5}>DI Yogyakarta (1.5%)</option>
+              <option value={1.5}>Bali (1.5%)</option>
+              <option value={1.5}>Lainnya (Default 1.5%)</option>
+            </select>
           </div>
-
-          <div className="bg-slate-900 text-white p-6 rounded-xl flex flex-col justify-center">
-            {hasilPkb ? (
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400">
-                    Tarif PKB ({hasilPkb.tarif}%)
-                  </span>
-                  <span>Rp {hasilPkb.pkbPokok.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400">Opsen PKB (66%)</span>
-                  <span>Rp {hasilPkb.opsen.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400">SWDKLLJ</span>
-                  <span>Rp {hasilPkb.swdkllj.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="flex justify-between border-b border-gray-700 pb-2">
-                  <span className="text-gray-400">Estimasi Admin</span>
-                  <span>Rp {hasilPkb.admin.toLocaleString("id-ID")}</span>
-                </div>
-                <div className="pt-2 text-center">
-                  <div className="text-orange-400 text-xs font-bold uppercase">
-                    Total Estimasi Bayar
-                  </div>
-                  <div className="text-3xl font-bold">
-                    Rp {hasilPkb.total.toLocaleString("id-ID")}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-gray-500">
-                Masukkan NJKB kendaraan Anda.
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Kepemilikan Ke-
+            </label>
+            <select
+              className="w-full border p-2.5 rounded-lg bg-white"
+              value={urutan}
+              onChange={(e) => setUrutan(Number(e.target.value))}
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n} ({n === 1 ? "Pertama" : "dst"})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      </PageWrapper>
-    );
-  }
 
-  return null;
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Koefisien Bobot
+            </label>
+            <select
+              className="w-full border p-2.5 rounded-lg bg-white"
+              value={bobot}
+              onChange={(e) => setBobot(Number(e.target.value))}
+            >
+              <option value={1}>1.0 (Minibus/Sedan/Motor)</option>
+              <option value={1.05}>1.05 (Jeep/SUV)</option>
+              <option value={1.1}>1.1 (Truk Ringan)</option>
+              <option value={1.3}>1.3 (Truk/Alat Berat)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Biaya SWDKLLJ
+            </label>
+            <input
+              type="text"
+              className="w-full border p-2.5 rounded-lg bg-gray-100"
+              value={formatRupiah(swdkllj)}
+              readOnly
+            />
+          </div>
+        </div>
+
+        {/* Info Tarif Dinamis */}
+        <div className="flex gap-4 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-200">
+          <span>
+            Tarif PKB: <strong>{provinsi + (urutan - 1) * 0.5}%</strong>
+          </span>
+          <span>
+            Tarif Opsen: <strong>66%</strong>
+          </span>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleReset}
+            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+          >
+            <RotateCcw size={18} /> RESET
+          </button>
+          <button
+            onClick={hitung}
+            className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700 shadow-md"
+          >
+            HITUNG PAJAK
+          </button>
+        </div>
+      </div>
+
+      {/* OUTPUT PKB */}
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
+        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+          TOTAL BAYAR (ESTIMASI)
+        </h6>
+        <div className="text-3xl font-bold mb-6 text-orange-400">
+          {result ? formatRupiah(result.total) : "Rp 0"}
+        </div>
+
+        {result ? (
+          <div className="w-full text-left space-y-3">
+            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+              <span className="text-slate-400">PKB Pokok</span>
+              <span className="font-bold">
+                {formatNumberDots(result.pokok)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+              <span className="text-slate-400">Opsen PKB (Kab/Kota)</span>
+              <span className="font-bold">
+                {formatNumberDots(result.opsen)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm pb-2">
+              <span className="text-slate-400">SWDKLLJ</span>
+              <span className="font-bold text-yellow-400">
+                {formatNumberDots(swdkllj)}
+              </span>
+            </div>
+            <div className="mt-4 text-[10px] text-slate-500 text-center italic bg-black/20 p-2 rounded">
+              Note: Belum termasuk biaya administrasi STNK/TNKB.
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500 italic">
+            Total Pajak Kendaraan muncul di sini.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
