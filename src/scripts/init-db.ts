@@ -1,259 +1,180 @@
-import { google } from "googleapis";
+import { Pool } from "pg";
 import * as dotenv from "dotenv";
 
-// Load environment variables dari .env.local
 dotenv.config({ path: ".env.local" });
 
-const SHEET_NAMES = {
-  USER: "User",
-  TER_LOGS: "Riwayat TER",
-  EXAM_LOGS: "Hasil Seleksi Relawan",
-  STUDENT_DATA: "Data Mahasiswa",
-  VOLUNTEER_REG: "Pendaftaran Relawan",
-  BPPU_DATA: "Data BPPU",
-  SPT_DATA: "Data SPT",
-  BP21_DATA: "Data BP21",
-  BILLING_DATA: "Data Billing",
-  BANK_SOAL: "Bank Soal",
-  TANDING_SOAL: "Bank Soal Tanding",
-  TANDING_HASIL: "Hasil Tanding VTC",
-};
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Wajib untuk Neon/Supabase
+});
 
 async function initializeDatabase() {
-  console.log("🚀 Memulai Inisialisasi Database Dummy...");
+  const client = await pool.connect();
+  try {
+    console.log("🚀 Memulai Inisialisasi Database (9 Tabel Pilihan)...");
 
-  if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.SPREADSHEET_ID) {
-    throw new Error("❌ Harap lengkapi .env.local terlebih dahulu!");
+    // ===========================================
+    // 1. users (Akun Login & Gamifikasi)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100),
+        role VARCHAR(20) DEFAULT 'user', -- 'admin', 'mahasiswa', 'relawan'
+        level INT DEFAULT 1,
+        xp INT DEFAULT 0,
+        badges JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 2. volunteer_logs (Data Mahasiswa/Relawan)
+    // ===========================================
+    // Menggantikan fungsi tabel 'students'
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS volunteer_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE, -- Relasi ke users
+        nim VARCHAR(20) UNIQUE,
+        nama_lengkap VARCHAR(100),
+        email VARCHAR(100),
+        jurusan VARCHAR(100),
+        angkatan VARCHAR(4),
+        status_seleksi VARCHAR(20) DEFAULT 'Pending', -- 'Lolos', 'Gagal', 'Pending'
+        aktivitas_terakhir TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 3. bank_soal (Bank Soal Ujian)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS bank_soal (
+        id SERIAL PRIMARY KEY,
+        pertanyaan TEXT NOT NULL,
+        opsi_a VARCHAR(255),
+        opsi_b VARCHAR(255),
+        opsi_c VARCHAR(255),
+        opsi_d VARCHAR(255),
+        kunci_jawaban CHAR(1), -- 'A', 'B', 'C', 'D'
+        kategori VARCHAR(50) DEFAULT 'Umum', -- 'PPh', 'PPN', 'KUP'
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 4. exam_results (Hasil Ujian/Seleksi)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS exam_results (
+        id SERIAL PRIMARY KEY,
+        user_id INT, 
+        nama_peserta VARCHAR(100),
+        skor_akhir INT DEFAULT 0,
+        jumlah_benar INT DEFAULT 0,
+        jumlah_salah INT DEFAULT 0,
+        tanggal_ujian TIMESTAMP DEFAULT NOW(),
+        status_kelulusan VARCHAR(20) -- 'Lulus', 'Tidak Lulus'
+      );
+    `);
+
+    // ===========================================
+    // 5. spt_logs (Simulasi Coretax SPT)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS spt_logs (
+        id SERIAL PRIMARY KEY,
+        jenis_spt VARCHAR(100) NOT NULL,
+        masa VARCHAR(20) NOT NULL,
+        tahun VARCHAR(10) NOT NULL,
+        pembetulan INT DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'Draft',
+        nominal NUMERIC(15, 2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 6. billing_data (Simulasi E-Billing)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS billing_data (
+        id SERIAL PRIMARY KEY,
+        id_billing VARCHAR(20) UNIQUE NOT NULL,
+        npwp VARCHAR(20),
+        nama_wp VARCHAR(100),
+        kode_jenis_pajak VARCHAR(10),
+        kode_jenis_setoran VARCHAR(10),
+        masa_pajak VARCHAR(20),
+        tahun_pajak VARCHAR(4),
+        nominal NUMERIC(15, 2),
+        uraian TEXT,
+        masa_aktif TIMESTAMP,
+        status VARCHAR(20) DEFAULT 'Belum Bayar',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 7. faktur_logs (Simulasi E-Faktur)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS faktur_logs (
+        id SERIAL PRIMARY KEY,
+        nsfp VARCHAR(30) UNIQUE NOT NULL,
+        lawan_transaksi VARCHAR(100),
+        tanggal DATE,
+        dpp NUMERIC(15, 2),
+        ppn NUMERIC(15, 2),
+        total NUMERIC(15, 2),
+        status VARCHAR(20) DEFAULT 'Approval Sukses',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 8. bupot_21_logs (Simulasi Bukti Potong)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS bupot_21_logs (
+        id SERIAL PRIMARY KEY,
+        bupot_id VARCHAR(50),
+        masa_pajak VARCHAR(20),
+        npwp VARCHAR(20),
+        nama_wp VARCHAR(100),
+        kode_objek VARCHAR(20),
+        bruto NUMERIC(15, 2),
+        pph_amount NUMERIC(15, 2),
+        status VARCHAR(20) DEFAULT 'Terbit',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // ===========================================
+    // 9. ter_logs (Riwayat Kalkulator TER)
+    // ===========================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS ter_logs (
+        id SERIAL PRIMARY KEY,
+        gaji_bruto NUMERIC(15, 2) NOT NULL,
+        status_ptkp VARCHAR(10),
+        kategori_ter VARCHAR(5),
+        tarif NUMERIC(5, 2),
+        potongan_pph NUMERIC(15, 2),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    console.log("✅ SUKSES: 9 Tabel Pilihan Berhasil Dibuat di PostgreSQL!");
+  } catch (err) {
+    console.error("❌ Gagal Inisialisasi Database:", err);
+  } finally {
+    client.release();
   }
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-  const spreadsheetId = process.env.SPREADSHEET_ID;
-
-  // 1. Cek sheet yang sudah ada
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  const existingSheets =
-    meta.data.sheets?.map((s) => s.properties?.title) || [];
-
-  const requests: any[] = [];
-
-  // 2. Buat Sheet jika belum ada
-  for (const name of Object.values(SHEET_NAMES)) {
-    if (!existingSheets.includes(name)) {
-      requests.push({ addSheet: { properties: { title: name } } });
-      console.log(`✅ Antrian buat sheet: ${name}`);
-    }
-  }
-
-  if (requests.length > 0) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: { requests },
-    });
-    console.log("✨ Sheet berhasil dibuat.");
-  }
-
-  // 3. Isi Header & Data Awal (Sesuai backend.gs lama)
-  const dataPayload: { range: string; values: string[][] }[] = [
-    {
-      range: `${SHEET_NAMES.USER}!A1:D1`,
-      values: [["Username", "Password", "Nama Lengkap", "Role"]],
-    },
-    {
-      range: `${SHEET_NAMES.USER}!A2:D4`, // Data admin default
-      values: [
-        ["admin", "admin123", "Syauqal Dev", "Admin"],
-        ["vtcbatch5", "vtc123", "Anggota VTC Batch 5", "Full Access"],
-        ["relawanpajak", "relawan123", "Calon Relawan", "Restricted"],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.TER_LOGS}!A1:H1`,
-      values: [
-        [
-          "ID Log",
-          "Tanggal Hitung",
-          "Nama Pegawai",
-          "NIK",
-          "Status PTKP",
-          "Penghasilan Bruto",
-          "Tarif TER",
-          "PPh 21 Terutang",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.EXAM_LOGS}!A1:F1`,
-      values: [
-        [
-          "Timestamp",
-          "Identitas Peserta",
-          "Skor Akhir",
-          "Status Kelulusan",
-          "Jml Pelanggaran",
-          "Keterangan",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.STUDENT_DATA}!A1:B1`,
-      values: [["Nama Mahasiswa", "NIM"]],
-    },
-    {
-      range: `${SHEET_NAMES.STUDENT_DATA}!A2:B4`, // Data mahasiswa dummy
-      values: [
-        ["Muhamad Syauqal Afwika Rahman", "40011423620080"],
-        ["Muhamad Naufal Afwika Rahman", "40017612367123"],
-        ["Peserta Umum", "0000000000"],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.VOLUNTEER_REG}!A1:G1`,
-      values: [
-        [
-          "Timestamp",
-          "Nama Lengkap",
-          "NIM",
-          "Program Studi",
-          "Semester",
-          "Status Upload",
-          "Pernyataan",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.BPPU_DATA}!A1:K1`,
-      values: [
-        [
-          "ID BPPU",
-          "Masa Pajak",
-          "Status",
-          "NPWP/NIK",
-          "Nama WP",
-          "Kode Objek Pajak",
-          "Dasar Pengenaan Pajak",
-          "Tarif (%)",
-          "PPh Dipotong",
-          "No Dokumen",
-          "Tanggal Input",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.SPT_DATA}!A1:I1`,
-      values: [
-        [
-          "ID SPT",
-          "Jenis Pajak",
-          "Masa Pajak",
-          "Tahun Pajak",
-          "Status SPT",
-          "Pembetulan Ke",
-          "Tanggal Buat",
-          "Total PPh Kurang Bayar",
-          "Data JSON",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.BP21_DATA}!A1:L1`,
-      values: [
-        [
-          "ID BUPOT",
-          "Masa Pajak",
-          "Status",
-          "NPWP Penerima",
-          "Nama Penerima",
-          "Kode Objek",
-          "Bruto (Rp)",
-          "DPP (Rp)",
-          "Tarif (%)",
-          "PPh (Rp)",
-          "No Dokumen",
-          "Tanggal Input",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.BILLING_DATA}!A1:K1`,
-      values: [
-        [
-          "ID Billing",
-          "NPWP",
-          "Nama WP",
-          "Kode Billing",
-          "Masa Pajak",
-          "Mata Uang",
-          "Nominal (Rp)",
-          "Status",
-          "NTPN",
-          "Waktu Buat",
-          "Waktu Bayar",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.BANK_SOAL}!A1:G1`,
-      values: [
-        [
-          "ID",
-          "Pertanyaan",
-          "Opsi A",
-          "Opsi B",
-          "Opsi C",
-          "Opsi D",
-          "Kunci Jawaban",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.TANDING_SOAL}!A1:G1`,
-      values: [
-        [
-          "ID",
-          "Pertanyaan",
-          "Opsi A",
-          "Opsi B",
-          "Opsi C",
-          "Opsi D",
-          "Kunci Jawaban",
-        ],
-      ],
-    },
-    {
-      range: `${SHEET_NAMES.TANDING_HASIL}!A1:F1`,
-      values: [
-        [
-          "Timestamp",
-          "Nama Peserta",
-          "NIM",
-          "Skor Akhir",
-          "Pelanggaran",
-          "Status",
-        ],
-      ],
-    },
-  ];
-
-  // Eksekusi update data (batch)
-  await sheets.spreadsheets.values.batchUpdate({
-    spreadsheetId,
-    requestBody: {
-      valueInputOption: "USER_ENTERED",
-      data: dataPayload,
-    },
-  });
-
-  console.log(
-    "🎉 Database Dummy SIAP DIGUNAKAN! Silakan cek Google Sheet Anda."
-  );
 }
 
-initializeDatabase().catch(console.error);
+initializeDatabase();

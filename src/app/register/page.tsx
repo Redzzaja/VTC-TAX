@@ -3,6 +3,15 @@
 import { useActionState } from "react";
 import { registerAction } from "@/actions/register";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  UserPlus,
+  User,
+  ShieldCheck,
+  Key,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 
 const initialState = {
   success: false,
@@ -16,79 +25,134 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-2 text-gray-800">
-          Daftar Akun Baru
-        </h1>
-        <p className="text-center text-gray-500 mb-6 text-sm">
-          Bergabung dengan VTC Tax System
-        </p>
-
-        <form action={formAction} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nama Lengkap
-            </label>
-            <input
-              name="name"
-              type="text"
-              required
-              placeholder="Contoh: Budi Santoso"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
-            <input
-              name="username"
-              type="text"
-              required
-              placeholder="Untuk login nanti"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              name="password"
-              type="password"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-
-          {state?.message && (
-            <div
-              className={`text-sm text-center p-2 rounded ${state.success ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}
-            >
-              {state.message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full bg-blue-900 text-white py-2 px-4 rounded-md hover:bg-blue-800 disabled:opacity-50 transition-colors"
-          >
-            {isPending ? "Memproses..." : "Daftar Sekarang"}
-          </button>
-        </form>
-
-        <div className="text-center mt-6 text-sm">
-          <span className="text-gray-600">Sudah punya akun? </span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in duration-500">
+        {/* Header Section */}
+        <div className="bg-slate-50 p-6 text-center border-b border-slate-100 relative">
           <Link
             href="/"
-            className="text-blue-600 font-semibold hover:underline"
+            className="absolute left-4 top-6 text-slate-400 hover:text-blue-600 transition-colors"
           >
-            Login disini
+            <ArrowLeft size={20} />
           </Link>
+          <div className="mx-auto w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 p-2">
+            <Image
+              src="/favicon.ico"
+              alt="Logo VTC"
+              width={30}
+              height={30}
+              className="object-contain"
+            />
+          </div>
+          <h1 className="text-xl font-bold text-slate-800">Daftar Akun Baru</h1>
+          <p className="text-slate-500 text-xs">
+            Bergabunglah dengan komunitas Relawan Pajak
+          </p>
+        </div>
+
+        {/* Form Section */}
+        <div className="p-8 pt-6">
+          <form action={formAction} className="space-y-4">
+            {/* Nama Lengkap */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Nama Lengkap
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                  <User size={18} />
+                </div>
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="Contoh: Budi Santoso"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Username */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Username
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                  <ShieldCheck size={18} />
+                </div>
+                <input
+                  name="username"
+                  type="text"
+                  required
+                  placeholder="Buat username unik"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Password
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                  <Key size={18} />
+                </div>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="Minimal 6 karakter"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Feedback Message */}
+            {state?.message && (
+              <div
+                className={`flex items-center gap-2 text-xs font-medium p-3 rounded-lg border animate-pulse ${
+                  state.success
+                    ? "bg-green-50 text-green-700 border-green-200"
+                    : "bg-red-50 text-red-600 border-red-200"
+                }`}
+              >
+                <span>{state.success ? "✅" : "⚠️"}</span> {state.message}
+              </div>
+            )}
+
+            {/* Button */}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full mt-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Memproses...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={18} /> Daftar Akun
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <div className="mt-6 text-center border-t border-slate-100 pt-4">
+            <p className="text-slate-500 text-sm">
+              Sudah memiliki akun?{" "}
+              <Link
+                href="/"
+                className="font-bold text-blue-700 hover:text-blue-900 hover:underline transition-colors"
+              >
+                Login disini
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
