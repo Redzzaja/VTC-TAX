@@ -11,6 +11,7 @@ import {
   Star,
   Lock,
   Map,
+  Play,
 } from "lucide-react";
 
 // --- DATA LEVEL (TETAP SAMA) ---
@@ -151,6 +152,7 @@ export default function RuangBelajarPage() {
   }, []);
 
   const handleReset = () => {
+    // Idealnya pakai custom modal, sementara pakai confirm agar cepat
     if (confirm("Yakin ingin reset progress ke Level 1?")) {
       setProgress(1);
       localStorage.setItem("vtc_level_progress", "1");
@@ -188,16 +190,16 @@ export default function RuangBelajarPage() {
   if (activeLevel) {
     return (
       <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xl">
-          {/* Header Level */}
-          <div className="bg-blue-600 p-6 flex justify-between items-center text-white">
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xl">
+          {/* Header Level - Slate 900 + Aksen Emas Minimalis */}
+          <div className="bg-slate-900 p-6 flex justify-between items-center text-white border-b border-slate-800">
             <h2 className="text-xl font-bold flex items-center gap-3">
-              <Star className="text-yellow-300 fill-yellow-300" />
+              <Star className="text-yellow-500 fill-yellow-500" />
               LEVEL {activeLevel.id}: {activeLevel.title.toUpperCase()}
             </h2>
             <button
               onClick={() => setActiveLevel(null)}
-              className="p-2 hover:bg-blue-700 rounded-full transition-all"
+              className="p-2 hover:bg-slate-800 rounded-full transition-all text-slate-400 hover:text-white"
             >
               <XCircle size={24} />
             </button>
@@ -205,13 +207,13 @@ export default function RuangBelajarPage() {
 
           <div className="p-8 min-h-[400px]">
             {/* Tabs */}
-            <div className="flex gap-4 mb-8 border-b border-gray-100 pb-1">
+            <div className="flex gap-4 mb-8 border-b border-slate-100 pb-1">
               <button
                 onClick={() => setActiveTab("materi")}
                 className={`px-6 py-2.5 font-bold text-sm transition-all border-b-2 ${
                   activeTab === "materi"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
                 1. PELAJARI MATERI
@@ -220,8 +222,8 @@ export default function RuangBelajarPage() {
                 onClick={() => setActiveTab("kuis")}
                 className={`px-6 py-2.5 font-bold text-sm transition-all border-b-2 ${
                   activeTab === "kuis"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
                 2. TANTANGAN KUIS
@@ -231,14 +233,17 @@ export default function RuangBelajarPage() {
             {/* Content Materi */}
             {activeTab === "materi" && (
               <div className="animate-in fade-in">
-                <div className="bg-blue-50 p-8 rounded-2xl border border-blue-100 text-gray-700 leading-relaxed text-lg shadow-sm">
-                  <h3 className="text-blue-800 font-bold mb-4 text-2xl">
+                <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-slate-700 leading-relaxed text-lg shadow-sm">
+                  <h3 className="text-slate-900 font-bold mb-4 text-2xl border-l-4 border-yellow-500 pl-4">
                     {activeLevel.title}
                   </h3>
                   <p>{activeLevel.material}</p>
                 </div>
-                <div className="mt-6 flex items-start gap-3 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
-                  <BookOpen size={18} className="mt-0.5 shrink-0" />
+                <div className="mt-6 flex items-start gap-3 text-sm text-slate-500 bg-white border border-slate-100 p-4 rounded-lg">
+                  <BookOpen
+                    size={18}
+                    className="mt-0.5 shrink-0 text-yellow-500"
+                  />
                   <p>
                     Baca materi dengan seksama sebelum melanjutkan ke kuis. Poin
                     akan tersimpan jika Anda menjawab benar.
@@ -253,9 +258,9 @@ export default function RuangBelajarPage() {
                 {activeLevel.quiz.map((q: any, idx: number) => (
                   <div
                     key={idx}
-                    className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"
+                    className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
                   >
-                    <p className="text-gray-800 font-bold mb-6 text-lg">
+                    <p className="text-slate-800 font-bold mb-6 text-lg border-l-4 border-slate-900 pl-4">
                       {idx + 1}. {q.q}
                     </p>
                     <div className="space-y-3">
@@ -264,8 +269,8 @@ export default function RuangBelajarPage() {
                           key={key}
                           className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
                             quizAnswers[idx] === key
-                              ? "bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500"
-                              : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                              ? "bg-slate-900 border-slate-900 text-white ring-1 ring-slate-900"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                           }`}
                         >
                           <input
@@ -281,8 +286,8 @@ export default function RuangBelajarPage() {
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border transition-colors ${
                               quizAnswers[idx] === key
-                                ? "bg-blue-600 text-white border-blue-600"
-                                : "bg-gray-100 text-gray-400 border-gray-300"
+                                ? "bg-yellow-500 text-slate-900 border-yellow-500"
+                                : "bg-slate-100 text-slate-400 border-slate-300"
                             }`}
                           >
                             {key}
@@ -295,9 +300,10 @@ export default function RuangBelajarPage() {
                 ))}
                 <button
                   onClick={submitQuiz}
-                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-blue-200 transition-all flex justify-center items-center gap-2"
+                  className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center gap-2"
                 >
-                  <CheckCircle2 size={20} /> KIRIM JAWABAN
+                  <CheckCircle2 size={20} className="text-yellow-500" /> KIRIM
+                  JAWABAN
                 </button>
               </div>
             )}
@@ -307,14 +313,14 @@ export default function RuangBelajarPage() {
         {/* Modal Sukses */}
         {showSuccess && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in duration-200">
-            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-              <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200">
+              <div className="w-20 h-20 bg-slate-900 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-slate-100">
                 <Trophy size={40} className="animate-bounce" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">
                 LUAR BIASA!
               </h3>
-              <p className="text-gray-500 mb-8">
+              <p className="text-slate-500 mb-8">
                 Level {activeLevel.id} Selesai. Lanjut ke level berikutnya?
               </p>
               <div className="flex gap-3">
@@ -323,7 +329,7 @@ export default function RuangBelajarPage() {
                     setShowSuccess(false);
                     setActiveLevel(null);
                   }}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold transition-all"
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all"
                 >
                   Tutup
                 </button>
@@ -332,7 +338,7 @@ export default function RuangBelajarPage() {
                     setShowSuccess(false);
                     openLevel(gameLevels[activeLevel.id] || activeLevel);
                   }}
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all"
+                  className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all"
                 >
                   Lanjut Level
                 </button>
@@ -344,19 +350,19 @@ export default function RuangBelajarPage() {
         {/* Modal Gagal */}
         {showFail && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in duration-200">
-            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
-              <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-200">
+              <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <XCircle size={40} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">
                 JAWABAN SALAH
               </h3>
-              <p className="text-gray-500 mb-8">
+              <p className="text-slate-500 mb-8">
                 Jangan menyerah! Baca materi lagi dan coba jawab ulang.
               </p>
               <button
                 onClick={() => setShowFail(false)}
-                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all"
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all"
               >
                 COBA LAGI
               </button>
@@ -369,41 +375,44 @@ export default function RuangBelajarPage() {
 
   // --- TAMPILAN MENU UTAMA (PETA GAME) ---
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden text-center">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header Banner */}
+      <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800 shadow-xl relative overflow-hidden text-center">
         <div className="relative z-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 flex justify-center items-center gap-3">
-            <Map className="text-blue-600" /> PETA PETUALANGAN PAJAK
+          <h1 className="text-3xl font-bold text-white mb-2 flex justify-center items-center gap-3">
+            <Map className="text-yellow-500" /> PETA PETUALANGAN PAJAK
           </h1>
-          <p className="text-gray-500 text-sm mb-8">
-            Selesaikan misi untuk membuka level berikutnya
+          <p className="text-slate-400 text-sm mb-8 max-w-lg mx-auto">
+            Selesaikan misi perpajakan untuk membuka level berikutnya. Jadilah
+            ahli pajak yang kompeten!
           </p>
 
-          <div className="max-w-lg mx-auto bg-gray-100 h-4 rounded-full overflow-hidden mb-3 border border-gray-200">
+          <div className="max-w-lg mx-auto bg-slate-800 h-4 rounded-full overflow-hidden mb-3 border border-slate-700">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out"
+              className="h-full bg-yellow-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(234,179,8,0.5)]"
               style={{ width: `${(progress / 10) * 100}%` }}
             />
           </div>
-          <div className="text-blue-600 font-bold text-xs tracking-wider">
+          <div className="text-yellow-500 font-bold text-xs tracking-wider">
             LEVEL {progress} / 10 SELESAI
           </div>
         </div>
 
-        {/* Dekorasi Background */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+        {/* Dekorasi Background Halus */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-slate-900/50 pointer-events-none" />
+        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-yellow-500/10 rounded-full blur-3xl" />
+
         <button
           onClick={handleReset}
-          className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+          className="absolute top-4 right-4 text-slate-600 hover:text-white transition-colors bg-slate-800 p-2 rounded-full hover:bg-slate-700"
           title="Reset Progress"
         >
-          <RotateCcw size={18} />
+          <RotateCcw size={16} />
         </button>
       </div>
 
       {/* Grid Map */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-5xl mx-auto py-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-6xl mx-auto py-4">
         {gameLevels.map((lvl) => {
           const isUnlocked = lvl.id <= progress;
           const isCompleted = lvl.id < progress;
@@ -414,24 +423,24 @@ export default function RuangBelajarPage() {
               key={lvl.id}
               onClick={() => openLevel(lvl)}
               disabled={!isUnlocked}
-              className={`relative flex flex-col items-center group p-4 rounded-2xl transition-all duration-300 ${
+              className={`relative flex flex-col items-center group p-6 rounded-2xl transition-all duration-300 border ${
                 isUnlocked
-                  ? "bg-white border border-gray-200 hover:border-blue-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
-                  : "bg-gray-50 border border-gray-100 opacity-70 cursor-not-allowed grayscale"
-              }`}
+                  ? "bg-white border-slate-200 hover:border-slate-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+                  : "bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed"
+              } ${isCurrent ? "border-slate-900 ring-1 ring-slate-900 shadow-md" : ""}`}
             >
               {/* Badge Number */}
               <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-md mb-4 transition-all ${
+                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-sm mb-4 transition-all ${
                   isCompleted
-                    ? "bg-green-100 text-green-600 border-2 border-green-200"
+                    ? "bg-slate-100 text-slate-800"
                     : isCurrent
-                    ? "bg-blue-600 text-white border-4 border-blue-200 shadow-blue-200 animate-pulse"
-                    : "bg-gray-200 text-gray-400"
+                      ? "bg-slate-900 text-yellow-500 scale-110 shadow-slate-300"
+                      : "bg-slate-50 text-slate-400"
                 }`}
               >
                 {isCompleted ? (
-                  <CheckCircle2 size={28} />
+                  <CheckCircle2 size={28} className="text-slate-700" />
                 ) : isUnlocked ? (
                   lvl.id
                 ) : (
@@ -440,16 +449,17 @@ export default function RuangBelajarPage() {
               </div>
 
               <span
-                className={`text-xs font-bold uppercase tracking-wider text-center px-2 py-1 rounded ${
-                  isCurrent ? "text-blue-700 bg-blue-50" : "text-gray-600"
+                className={`text-xs font-bold uppercase tracking-wider text-center px-3 py-1.5 rounded-lg ${
+                  isCurrent ? "text-slate-900 bg-slate-100" : "text-slate-500"
                 }`}
               >
                 {lvl.title}
               </span>
 
+              {/* Start Badge (Floating) */}
               {isCurrent && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-bounce">
-                  START
+                <div className="absolute -top-3 -right-3 bg-slate-900 text-yellow-500 text-[10px] font-bold px-3 py-1 rounded-full shadow-md border-2 border-white animate-bounce flex items-center gap-1">
+                  <Play size={10} fill="currentColor" /> START
                 </div>
               )}
             </button>

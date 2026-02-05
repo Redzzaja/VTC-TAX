@@ -12,8 +12,10 @@ import {
   Trash2,
   X,
   RotateCcw,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // --- HELPER FORMATTING ---
 const formatRupiah = (num: number) => {
@@ -41,21 +43,31 @@ export default function TaxCalculatorPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Tombol Kembali */}
+      <div>
+        <Link
+          href="/dashboard/simulasi"
+          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-medium text-sm mb-2"
+        >
+          <ArrowLeft size={18} /> Kembali ke Menu Simulasi
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Calculator className="text-blue-600" /> Kalkulator Perpajakan
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Calculator className="text-slate-600" /> Kalkulator Perpajakan
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500">
             Hitung estimasi pajak Anda dengan cepat dan akurat.
           </p>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-        <div className="flex space-x-2 min-w-max">
+      {/* Navigation Tabs (Monokrom) */}
+      <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <div className="flex space-x-1 min-w-max">
           {[
             { id: "BADAN", label: "PPh Badan", icon: Building2 },
             { id: "KPLN", label: "Kredit LN", icon: Globe },
@@ -68,8 +80,8 @@ export default function TaxCalculatorPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all ${
                 activeTab === tab.id
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-slate-900 text-white shadow-md"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
               <tab.icon size={18} />
@@ -80,7 +92,7 @@ export default function TaxCalculatorPage() {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 min-h-[500px]">
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 min-h-125">
         {activeTab === "BADAN" && <CalcBadan />}
         {activeTab === "KPLN" && <CalcKpln />}
         {activeTab === "PENYUSUTAN" && <CalcPenyusutan />}
@@ -98,14 +110,13 @@ function CalcBadan() {
   const [jenis, setJenis] = useState("UMUM");
   const [omset, setOmset] = useState("");
   const [pkp, setPkp] = useState("");
-  const [note, setNote] = useState(""); // Dynamic Note text
+  const [note, setNote] = useState("");
   const [result, setResult] = useState<{
     total: number;
     skema: string;
     tarif: string;
   } | null>(null);
 
-  // Update deskripsi otomatis saat input berubah
   useEffect(() => {
     const valOmset = parseNumber(omset);
     if (jenis === "UMKM") {
@@ -173,18 +184,18 @@ function CalcBadan() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
           FORMULIR PPh BADAN{" "}
           <span className="text-slate-400 font-normal">
             | Sesuai UU HPP & PP 55 Tahun 2022
           </span>
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Jenis Wajib Pajak <span className="text-red-500">*</span>
           </label>
           <select
-            className="w-full border p-2.5 rounded-lg bg-white"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
             value={jenis}
             onChange={(e) => setJenis(e.target.value)}
           >
@@ -199,22 +210,22 @@ function CalcBadan() {
         </div>
 
         {note && (
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100 italic">
+          <div className="text-xs text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic">
             {note}
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Peredaran Bruto (Omset) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border p-2.5 pl-10 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               placeholder="0"
               value={formatNumberDots(omset)}
               onChange={(e) => setOmset(e.target.value)}
@@ -224,17 +235,17 @@ function CalcBadan() {
 
         {jenis !== "UMKM" && (
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Penghasilan Kena Pajak (PKP){" "}
               <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+              <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
                 Rp
               </span>
               <input
                 type="text"
-                className="w-full border p-2.5 pl-10 rounded-lg"
+                className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
                 placeholder="0"
                 value={formatNumberDots(pkp)}
                 onChange={(e) => setPkp(e.target.value)}
@@ -246,13 +257,13 @@ function CalcBadan() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
           >
             <RotateCcw size={18} /> RESET
           </button>
           <button
             onClick={calculate}
-            className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md transition-all"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
           >
             HITUNG PAJAK
           </button>
@@ -264,7 +275,7 @@ function CalcBadan() {
         <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
           PPh BADAN TERUTANG
         </h6>
-        <div className="text-3xl font-bold mb-6 text-yellow-400">
+        <div className="text-3xl font-bold mb-6 text-yellow-500">
           {result ? formatRupiah(result.total) : "Rp 0"}
         </div>
 
@@ -357,7 +368,7 @@ function CalcKpln() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <div className="md:col-span-2 space-y-6">
-        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
           KREDIT PAJAK LUAR NEGERI{" "}
           <span className="text-slate-400 font-normal">
             | Metode Ordinary Credit per Negara
@@ -366,38 +377,38 @@ function CalcKpln() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Penghasilan Neto Dalam Negeri (Rp){" "}
               <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              className="w-full border p-2.5 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               value={formatNumberDots(netoDn)}
               onChange={(e) => setNetoDn(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Tarif PPh Badan (%) <span className="text-red-500">*</span>
             </label>
             <input
               type="number"
-              className="w-full border p-2.5 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               value={tarif}
               onChange={(e) => setTarif(Number(e.target.value))}
             />
           </div>
         </div>
 
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-3">
-          <h6 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1">
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <h6 className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
             <Plus size={14} /> TAMBAH SUMBER PENGHASILAN LN
           </h6>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-1">
               <select
-                className="w-full border p-2 rounded text-sm bg-white"
+                className="w-full border border-slate-300 p-2 rounded text-sm bg-white focus:ring-2 focus:ring-slate-500 outline-none"
                 value={formNegara}
                 onChange={(e) => setFormNegara(e.target.value)}
               >
@@ -424,7 +435,7 @@ function CalcKpln() {
               <input
                 type="text"
                 placeholder="Neto LN (Rp)"
-                className="w-full border p-2 rounded text-sm"
+                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-2 focus:ring-slate-500 outline-none"
                 value={formatNumberDots(formNeto)}
                 onChange={(e) => setFormNeto(e.target.value)}
               />
@@ -433,7 +444,7 @@ function CalcKpln() {
               <input
                 type="text"
                 placeholder="Pajak LN (Rp)"
-                className="w-full border p-2 rounded text-sm"
+                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-2 focus:ring-slate-500 outline-none"
                 value={formatNumberDots(formPajak)}
                 onChange={(e) => setFormPajak(e.target.value)}
               />
@@ -441,7 +452,7 @@ function CalcKpln() {
             <div className="md:col-span-1">
               <button
                 onClick={tambahNegara}
-                className="w-full bg-blue-600 text-white p-2 rounded text-sm font-bold hover:bg-blue-700"
+                className="w-full bg-slate-800 text-white p-2 rounded text-sm font-bold hover:bg-slate-900 active:scale-95 transition-all"
               >
                 Tambah
               </button>
@@ -449,9 +460,9 @@ function CalcKpln() {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-xs">
+            <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-xs">
               <tr>
                 <th className="p-3">Negara</th>
                 <th className="p-3 text-right">Neto LN</th>
@@ -459,12 +470,12 @@ function CalcKpln() {
                 <th className="p-3 text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
-                    className="p-4 text-center text-gray-400 italic"
+                    className="p-4 text-center text-slate-400 italic"
                   >
                     Belum ada data negara ditambahkan.
                   </td>
@@ -484,7 +495,7 @@ function CalcKpln() {
                         onClick={() =>
                           setItems(items.filter((i) => i.id !== item.id))
                         }
-                        className="text-red-500 hover:text-red-700"
+                        className="text-slate-400 hover:text-red-700 transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -499,13 +510,13 @@ function CalcKpln() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
           >
             <RotateCcw size={18} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 shadow-md"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
           >
             HITUNG KREDIT
           </button>
@@ -517,7 +528,7 @@ function CalcKpln() {
           <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
             TOTAL KREDIT PPh 24
           </h6>
-          <div className="text-3xl font-bold mb-6 text-yellow-400">
+          <div className="text-3xl font-bold mb-6 text-yellow-500">
             {formatRupiah(result.credit)}
           </div>
 
@@ -590,7 +601,6 @@ function CalcPenyusutan() {
     const cost = parseNumber(harga);
     let masaManfaat = 0;
 
-    // Mapping Masa Manfaat
     if (jenisHarta === "HARTA") {
       if (kelompok === "1") masaManfaat = 4;
       if (kelompok === "2") masaManfaat = 8;
@@ -609,10 +619,6 @@ function CalcPenyusutan() {
     let akumulasi = 0;
     let bebanTahunIni = 0;
 
-    // Simple Annual Calculation Loop
-    // Catatan: Ini simulasi tahunan sederhana. Untuk akurasi bulanan (pro-rate) perlu logic lebih kompleks.
-    // Asumsi: Penyusutan dihitung penuh/proporsional tahunan untuk kemudahan UI.
-
     for (let i = 1; i <= masaManfaat; i++) {
       let penyusutan = 0;
       if (metode === "GL") {
@@ -622,9 +628,6 @@ function CalcPenyusutan() {
         if (i === masaManfaat) penyusutan = nilaiBuku;
       }
 
-      // Cek apakah tahun ini adalah Tahun SPT Pelaporan
-      // Logic sederhana: Beli 2024. Tahun ke-1 = 2024/2025 (tergantung bulan).
-      // Disini kita simplifikasi: Baris 1 = Tahun Beli.
       const tahunBerjalan = Number(beliTahun) + (i - 1);
 
       if (tahunBerjalan === tahunSpt) {
@@ -632,7 +635,6 @@ function CalcPenyusutan() {
       }
 
       nilaiBuku -= penyusutan;
-      // Jika sudah lewat tahun SPT, akumulasi berhenti dihitung untuk display
       if (tahunBerjalan <= tahunSpt) {
         akumulasi += penyusutan;
       }
@@ -655,7 +657,7 @@ function CalcPenyusutan() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
           PENYUSUTAN FISKAL{" "}
           <span className="text-slate-400 font-normal">
             | Metode Garis Lurus & Saldo Menurun
@@ -664,22 +666,22 @@ function CalcPenyusutan() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Tahun SPT Pelaporan
             </label>
             <input
               type="number"
-              className="w-full border p-2.5 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               value={tahunSpt}
               onChange={(e) => setTahunSpt(Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Akhir Tahun Buku
             </label>
             <select
-              className="w-full border p-2.5 rounded-lg bg-white"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
               value={akhirBuku}
               onChange={(e) => setAkhirBuku(e.target.value)}
             >
@@ -691,24 +693,24 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Harga Perolehan (Rp)
           </label>
           <input
             type="text"
-            className="w-full border p-2.5 rounded-lg"
+            className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
             value={formatNumberDots(harga)}
             onChange={(e) => setHarga(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Waktu Perolehan
           </label>
           <div className="flex gap-2">
             <select
-              className="w-2/3 border p-2.5 rounded-lg bg-white"
+              className="w-2/3 border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
               value={beliBulan}
               onChange={(e) => setBeliBulan(e.target.value)}
             >
@@ -733,7 +735,7 @@ function CalcPenyusutan() {
             </select>
             <input
               type="number"
-              className="w-1/3 border p-2.5 rounded-lg"
+              className="w-1/3 border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               value={beliTahun}
               onChange={(e) => setBeliTahun(e.target.value)}
             />
@@ -741,12 +743,12 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-slate-700 mb-2">
             Jenis Harta
           </label>
           <div className="flex gap-4">
             <label
-              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "HARTA" ? "bg-blue-50 border-blue-500 text-blue-700" : "bg-white border-gray-200"}`}
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "HARTA" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
             >
               <input
                 type="radio"
@@ -759,7 +761,7 @@ function CalcPenyusutan() {
               Harta Berwujud
             </label>
             <label
-              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "BANGUNAN" ? "bg-blue-50 border-blue-500 text-blue-700" : "bg-white border-gray-200"}`}
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "BANGUNAN" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
             >
               <input
                 type="radio"
@@ -775,11 +777,11 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Kelompok Harta
           </label>
           <select
-            className="w-full border p-2.5 rounded-lg bg-white"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
             value={kelompok}
             onChange={(e) => setKelompok(e.target.value)}
           >
@@ -804,11 +806,11 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Metode Penyusutan
           </label>
           <select
-            className="w-full border p-2.5 rounded-lg bg-white"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
             value={metode}
             onChange={(e) => setMetode(e.target.value)}
             disabled={jenisHarta === "BANGUNAN"}
@@ -823,20 +825,20 @@ function CalcPenyusutan() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
           >
             <RotateCcw size={18} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 shadow-md"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
           >
             HITUNG PENYUSUTAN
           </button>
         </div>
       </div>
 
-      {/* OUTPUT PENYUSUTAN (SESUAI PERMINTAAN) */}
+      {/* OUTPUT PENYUSUTAN */}
       <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col border border-slate-700 shadow-xl h-fit">
         {!summary ? (
           <div className="h-40 flex flex-col items-center justify-center text-slate-500 italic">
@@ -849,7 +851,7 @@ function CalcPenyusutan() {
               <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-1">
                 BEBAN PENYUSUTAN TAHUN {tahunSpt}
               </h6>
-              <div className="text-3xl font-bold text-yellow-400">
+              <div className="text-3xl font-bold text-yellow-500">
                 {formatRupiah(summary.beban)}
               </div>
             </div>
@@ -875,7 +877,6 @@ function CalcPenyusutan() {
           </div>
         )}
 
-        {/* Tabel Detail dibawah summary card (Opsional, disembunyikan jika tidak diminta spesifik di output akhir, tapi berguna) */}
         {hasil.length > 0 && (
           <div className="mt-6 pt-4 border-t border-slate-700">
             <div className="text-xs text-slate-500 uppercase font-bold mb-2">
@@ -922,18 +923,18 @@ function CalcPpn() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
           KALKULATOR PPN{" "}
           <span className="text-slate-400 font-normal">
             | UU HPP - Tarif Efektif 12% (2025)
           </span>
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Jenis Pengenaan PPN <span className="text-red-500">*</span>
           </label>
           <select
-            className="w-full border p-2.5 rounded-lg bg-white"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
             value={jenis}
             onChange={(e) => setJenis(e.target.value)}
           >
@@ -946,16 +947,16 @@ function CalcPpn() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Dasar Pengenaan Pajak (DPP) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border p-2.5 pl-10 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               placeholder="0"
               value={formatNumberDots(dpp)}
               onChange={(e) => setDpp(e.target.value)}
@@ -963,21 +964,21 @@ function CalcPpn() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Tarif PPN (%)
           </label>
           <div className="relative">
             <input
               type="number"
-              className="w-full border p-2.5 pr-10 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 pr-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />
-            <span className="absolute right-3 top-2.5 text-gray-500 font-bold">
+            <span className="absolute right-3 top-2.5 text-slate-500 font-bold">
               %
             </span>
           </div>
-          <p className="text-xs text-orange-600 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             *Tarif standar 12% berlaku mulai 1 Januari 2025.
           </p>
         </div>
@@ -985,7 +986,7 @@ function CalcPpn() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
           >
             <RotateCcw size={18} /> RESET
           </button>
@@ -993,7 +994,7 @@ function CalcPpn() {
             onClick={() =>
               setResult(Math.floor(parseNumber(dpp) * (rate / 100)))
             }
-            className="flex-1 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 shadow-md"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
           >
             HITUNG PPN
           </button>
@@ -1054,7 +1055,7 @@ function CalcPkb() {
   return (
     <div className="grid md:grid-cols-3 gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
           PAJAK KENDARAAN BERMOTOR (PKB){" "}
           <span className="text-slate-400 font-normal">
             | UU HKPD No. 1/2022 (Opsen 66%)
@@ -1062,11 +1063,11 @@ function CalcPkb() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             Jenis Kendaraan
           </label>
           <select
-            className="w-full border p-2.5 rounded-lg bg-white"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
             onChange={(e) => {
               if (e.target.value === "MOTOR") setSwdkllj(35000);
               else setSwdkllj(143000);
@@ -1079,16 +1080,16 @@ function CalcPkb() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
             NJKB (Nilai Jual) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-gray-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border p-2.5 pl-10 rounded-lg"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
               placeholder="0"
               value={formatNumberDots(njkb)}
               onChange={(e) => setNjkb(e.target.value)}
@@ -1098,11 +1099,11 @@ function CalcPkb() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Provinsi (Tarif Daerah)
             </label>
             <select
-              className="w-full border p-2.5 rounded-lg bg-white"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
               value={provinsi}
               onChange={(e) => setProvinsi(Number(e.target.value))}
             >
@@ -1116,11 +1117,11 @@ function CalcPkb() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Kepemilikan Ke-
             </label>
             <select
-              className="w-full border p-2.5 rounded-lg bg-white"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
               value={urutan}
               onChange={(e) => setUrutan(Number(e.target.value))}
             >
@@ -1135,11 +1136,11 @@ function CalcPkb() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Koefisien Bobot
             </label>
             <select
-              className="w-full border p-2.5 rounded-lg bg-white"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
               value={bobot}
               onChange={(e) => setBobot(Number(e.target.value))}
             >
@@ -1150,12 +1151,12 @@ function CalcPkb() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
               Biaya SWDKLLJ
             </label>
             <input
               type="text"
-              className="w-full border p-2.5 rounded-lg bg-gray-100"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-slate-100"
               value={formatRupiah(swdkllj)}
               readOnly
             />
@@ -1175,13 +1176,13 @@ function CalcPkb() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-200 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
           >
             <RotateCcw size={18} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-bold hover:bg-orange-700 shadow-md"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
           >
             HITUNG PAJAK
           </button>
@@ -1193,7 +1194,7 @@ function CalcPkb() {
         <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
           TOTAL BAYAR (ESTIMASI)
         </h6>
-        <div className="text-3xl font-bold mb-6 text-orange-400">
+        <div className="text-3xl font-bold mb-6 text-yellow-500">
           {result ? formatRupiah(result.total) : "Rp 0"}
         </div>
 
@@ -1213,7 +1214,7 @@ function CalcPkb() {
             </div>
             <div className="flex justify-between items-center text-sm pb-2">
               <span className="text-slate-400">SWDKLLJ</span>
-              <span className="font-bold text-yellow-400">
+              <span className="font-bold text-yellow-500">
                 {formatNumberDots(swdkllj)}
               </span>
             </div>

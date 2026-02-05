@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   getBupotListAction,
   createBupotAction,
@@ -19,19 +20,19 @@ import {
   Trash2,
   Stamp,
   X,
+  ArrowLeft,
+  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 
-// --- HELPER FORMATTING (TITIK RIBUAN) ---
+// --- HELPER FORMATTING ---
 const formatCurrency = (value: string | number) => {
   if (!value) return "";
-  // Konversi ke string, hapus non-digit, lalu tambah titik
   const rawValue = value.toString().replace(/\D/g, "");
   return rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
 const parseCurrency = (value: string) => {
-  // Hapus semua titik untuk mendapatkan nilai angka asli
   return value.replace(/\./g, "");
 };
 
@@ -40,13 +41,13 @@ export default function EbupotPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const [activeTab, setActiveTab] = useState<"BP-21" | "BPPU">("BP-21");
   const [statusTab, setStatusTab] = useState<"Belum Terbit" | "Terbit">(
     "Belum Terbit",
   );
 
-  // State Form
   const [formData, setFormData] = useState({
     masa: "Januari",
     tahun: "2025",
@@ -54,20 +55,14 @@ export default function EbupotPage() {
     npwp: "",
     nama: "",
     nitku: "",
-
     kode: "",
     tarif: "",
-    pph: "", // Disimpan sebagai string angka murni ("100000")
-
-    // BPPU
+    pph: "",
     fasilitas_pajak: "Tanpa Fasilitas",
     dpp_bppu: "",
-
-    // BP-21
     status_ptkp: "TK/0",
     bruto_bp21: "",
     persentase_dpp: "100",
-
     jenis_dokumen: "Invoice",
     no_dokumen: "",
     tanggal_dokumen: "",
@@ -84,24 +79,18 @@ export default function EbupotPage() {
     loadData();
   }, []);
 
-  // --- AUTO CALCULATION ---
   useEffect(() => {
     const tarif = parseFloat(formData.tarif) || 0;
     let hitunganPPh = 0;
-
     if (activeTab === "BPPU") {
-      // Rumus BPPU: DPP * Tarif
-      // Parse dulu karena state mungkin string kosong
       const dpp = parseFloat(formData.dpp_bppu) || 0;
       hitunganPPh = Math.floor(dpp * (tarif / 100));
     } else {
-      // Rumus BP-21: (Bruto * Persen DPP) * Tarif
       const bruto = parseFloat(formData.bruto_bp21) || 0;
       const persenDpp = parseFloat(formData.persentase_dpp) || 100;
       const dpp = bruto * (persenDpp / 100);
       hitunganPPh = Math.floor(dpp * (tarif / 100));
     }
-
     setFormData((prev) => ({ ...prev, pph: hitunganPPh.toString() }));
   }, [
     formData.dpp_bppu,
@@ -126,18 +115,14 @@ export default function EbupotPage() {
   ) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const payload = {
       ...formData,
       jenis_bupot: activeTab,
       status: statusSimpan,
-      // Pastikan kirim data angka murni (Server Action parsing parseFloat)
       bruto: activeTab === "BPPU" ? formData.dpp_bppu : formData.bruto_bp21,
     };
-
     const res = await createBupotAction(payload);
     setIsSubmitting(false);
-
     if (res.success) {
       toast.success(res.message);
       setIsModalOpen(false);
@@ -171,7 +156,6 @@ export default function EbupotPage() {
   };
 
   const handleApprove = (id: number) => {
-    if (!confirm("Posting data ini ke tab Terbit?")) return;
     const promise = approveBupotAction(id);
     toast.promise(promise, {
       loading: "Memposting...",
@@ -183,9 +167,14 @@ export default function EbupotPage() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Hapus data ini?")) return;
-    const promise = deleteBupotAction(id);
+  const onDeleteClick = (id: number) => {
+    setDeleteId(id);
+  };
+
+  const onConfirmDelete = async () => {
+    if (!deleteId) return;
+    const promise = deleteBupotAction(deleteId);
+    setDeleteId(null);
     toast.promise(promise, {
       loading: "Menghapus...",
       success: () => {
@@ -196,157 +185,162 @@ export default function EbupotPage() {
     });
   };
 
-  // --- HANDLER KHUSUS INPUT KEUANGAN ---
   const handleMoneyChange = (field: string, value: string) => {
-    // Hapus titik sebelum simpan ke state
     const cleanValue = parseCurrency(value);
-    // Validasi hanya angka
     if (!/^\d*$/.test(cleanValue)) return;
-
     setFormData({ ...formData, [field]: cleanValue });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in">
+      {/* --- TOMBOL KEMBALI --- */}
+      <div>
+        <Link
+          href="/dashboard/simulasi"
+          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-medium text-sm mb-2"
+        >
+          <ArrowLeft size={18} /> Kembali ke Menu Simulasi
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <FileText className="text-emerald-600" /> e-Bupot 21/26 & Unifikasi
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <FileText className="text-slate-600" /> e-Bupot 21/26 & Unifikasi
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-500">
             Administrasi Bukti Potong Pajak
           </p>
         </div>
 
-        <div className="bg-gray-100 p-1 rounded-lg flex gap-1">
+        <div className="bg-white border border-slate-200 p-1 rounded-lg flex gap-1 shadow-sm">
           <button
             onClick={() => setActiveTab("BP-21")}
-            className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "BP-21" ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "BP-21" ? "bg-slate-900 text-white shadow-md" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`}
           >
             <Users size={16} /> PPh 21/26
           </button>
           <button
             onClick={() => setActiveTab("BPPU")}
-            className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "BPPU" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "BPPU" ? "bg-slate-900 text-white shadow-md" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`}
           >
-            <Building2 size={16} /> PPh Unifikasi
+            <Briefcase size={16} /> PPh Unifikasi
           </button>
         </div>
       </div>
 
       {/* List Data */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="flex border-b border-slate-200">
           <button
             onClick={() => setStatusTab("Belum Terbit")}
-            className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors flex justify-center items-center gap-2 ${statusTab === "Belum Terbit" ? "border-emerald-500 text-emerald-700 bg-emerald-50/50" : "border-transparent text-gray-500 hover:bg-gray-50"}`}
+            className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors flex justify-center items-center gap-2 ${statusTab === "Belum Terbit" ? "border-slate-800 text-slate-900 bg-slate-50" : "border-transparent text-slate-500 hover:text-slate-700"}`}
           >
             <Archive size={18} /> Belum Terbit (Draft)
           </button>
           <button
             onClick={() => setStatusTab("Terbit")}
-            className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors flex justify-center items-center gap-2 ${statusTab === "Terbit" ? "border-blue-500 text-blue-700 bg-blue-50/50" : "border-transparent text-gray-500 hover:bg-gray-50"}`}
+            className={`flex-1 py-4 text-sm font-bold text-center border-b-2 transition-colors flex justify-center items-center gap-2 ${statusTab === "Terbit" ? "border-slate-800 text-slate-900 bg-slate-50" : "border-transparent text-slate-500 hover:text-slate-700"}`}
           >
             <CheckCircle2 size={18} /> Sudah Terbit
           </button>
         </div>
 
-        <div className="p-4 flex justify-between items-center bg-gray-50">
+        <div className="p-4 flex justify-between items-center bg-white border-b border-slate-100">
           <div className="relative">
             <Search
-              className="absolute left-3 top-2.5 text-gray-400"
+              className="absolute left-3 top-2.5 text-slate-400"
               size={16}
             />
             <input
               type="text"
               placeholder="Cari NPWP / Nama..."
-              className="pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:ring-1 focus:ring-emerald-500 outline-none w-64"
+              className="pl-9 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:ring-1 focus:ring-slate-500 outline-none w-64"
             />
           </div>
 
           {statusTab === "Belum Terbit" && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-sm"
+              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md active:scale-95"
             >
-              <Plus size={16} /> Rekam {activeTab}
+              <Plus size={16} className="text-yellow-500" /> Rekam {activeTab}
             </button>
           )}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-white text-gray-600 font-bold border-b border-gray-200">
+            <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase text-xs">
               <tr>
-                <th className="px-6 py-3">No Bukti Potong</th>
-                <th className="px-6 py-3">Masa</th>
-                <th className="px-6 py-3">Identitas WP</th>
-                <th className="px-6 py-3">Objek Pajak</th>
-                <th className="px-6 py-3 text-right">Penghasilan Bruto</th>
-                <th className="px-6 py-3 text-right">PPh Dipotong</th>
-                {statusTab === "Belum Terbit" && (
-                  <th className="px-6 py-3 text-center">Aksi</th>
-                )}
+                <th className="px-6 py-4">No Bukti Potong</th>
+                <th className="px-6 py-4">Masa</th>
+                <th className="px-6 py-4">Identitas WP</th>
+                <th className="px-6 py-4">Objek Pajak</th>
+                <th className="px-6 py-4 text-right">Penghasilan Bruto</th>
+                <th className="px-6 py-4 text-right">PPh Dipotong</th>
+                <th className="px-6 py-4 text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-500">
+                  <td colSpan={7} className="p-8 text-center text-slate-500">
                     Memuat data...
                   </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-gray-400">
+                  <td colSpan={7} className="p-12 text-center text-slate-400">
                     Tidak ada data.
                   </td>
                 </tr>
               ) : (
                 filteredData.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-medium text-blue-600">
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-mono font-medium text-slate-600">
                       {item.bupot_id}
                     </td>
-                    <td className="px-6 py-4">{item.masa}</td>
+                    <td className="px-6 py-4 text-slate-600">{item.masa}</td>
                     <td className="px-6 py-4">
-                      <div className="font-bold text-gray-800">
+                      <div className="font-bold text-slate-800">
                         {item.identitas.nama}
                       </div>
-                      <div className="text-xs text-gray-500 font-mono">
+                      <div className="text-xs text-slate-500 font-mono">
                         {item.identitas.npwp}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-bold">
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs font-bold text-slate-600">
                         {item.kode_objek}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right font-mono text-slate-600">
                       Rp {item.bruto.toLocaleString("id-ID")}
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-emerald-600">
+                    <td className="px-6 py-4 text-right font-mono font-bold text-emerald-700">
                       Rp {item.pph.toLocaleString("id-ID")}
                     </td>
-                    {statusTab === "Belum Terbit" && (
-                      <td className="px-6 py-4 text-center flex justify-center gap-2">
+
+                    <td className="px-6 py-4 text-center flex justify-center gap-2">
+                      {statusTab === "Belum Terbit" && (
                         <button
                           onClick={() => handleApprove(item.id)}
-                          className="text-emerald-500 bg-emerald-50 p-2 rounded-lg"
+                          className="text-slate-600 bg-slate-100 p-2 rounded-lg hover:bg-slate-200 transition-colors"
                           title="Posting"
                         >
                           <Stamp size={16} />
                         </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="text-gray-400 hover:text-red-500 p-2"
-                          title="Hapus"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    )}
+                      )}
+                      <button
+                        onClick={() => onDeleteClick(item.id)}
+                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                        title="Hapus"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -359,39 +353,38 @@ export default function EbupotPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95">
-            <div
-              className={`px-6 py-4 flex justify-between items-center text-white sticky top-0 z-10 ${activeTab === "BPPU" ? "bg-blue-600" : "bg-emerald-600"}`}
-            >
+            {/* Header Modal - Slate 900 */}
+            <div className="px-6 py-4 flex justify-between items-center bg-slate-900 text-white sticky top-0 z-10 border-b border-slate-800">
               <h3 className="font-bold text-lg flex items-center gap-2">
                 {activeTab === "BPPU" ? (
-                  <Building2 size={20} />
+                  <Briefcase size={20} className="text-yellow-500" />
                 ) : (
-                  <Users size={20} />
+                  <Users size={20} className="text-yellow-500" />
                 )}
                 Rekam {activeTab === "BPPU" ? "PPh Unifikasi" : "PPh 21/26"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="hover:bg-white/20 p-1 rounded"
+                className="hover:text-slate-300 transition-colors"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
             <form className="p-8 space-y-8">
               {/* I. INFORMASI UMUM */}
               <section>
-                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
                   I. Informasi Umum
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex gap-4">
                     <div className="w-1/2">
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Masa Pajak <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.masa}
                         onChange={(e) =>
                           setFormData({ ...formData, masa: e.target.value })
@@ -418,22 +411,22 @@ export default function EbupotPage() {
                       </select>
                     </div>
                     <div className="w-1/2">
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Tahun
                       </label>
                       <input
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1 bg-gray-50"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 bg-slate-50 text-slate-500"
                         value={formData.tahun}
                         readOnly
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Status <span className="text-red-500">*</span>
                     </label>
                     <select
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.status_bupot}
                       onChange={(e) =>
                         setFormData({
@@ -447,12 +440,12 @@ export default function EbupotPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       NPWP / NIK <span className="text-red-500">*</span>
                     </label>
                     <input
                       required
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.npwp}
                       onChange={(e) =>
                         setFormData({ ...formData, npwp: e.target.value })
@@ -461,12 +454,12 @@ export default function EbupotPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Nama <span className="text-red-500">*</span>
                     </label>
                     <input
                       required
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.nama}
                       onChange={(e) =>
                         setFormData({ ...formData, nama: e.target.value })
@@ -474,11 +467,11 @@ export default function EbupotPage() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       NITKU / Identitas Sub Unit
                     </label>
                     <input
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.nitku}
                       onChange={(e) =>
                         setFormData({ ...formData, nitku: e.target.value })
@@ -491,19 +484,17 @@ export default function EbupotPage() {
 
               {/* II. PAJAK PENGHASILAN */}
               <section>
-                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
                   II. Pajak Penghasilan
                 </h4>
-
-                {/* --- KHUSUS BPPU --- */}
                 {activeTab === "BPPU" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Fasilitas Pajak
                       </label>
                       <select
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.fasilitas_pajak}
                         onChange={(e) =>
                           setFormData({
@@ -518,11 +509,11 @@ export default function EbupotPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Kode Objek Pajak <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.kode}
                         onChange={(e) =>
                           setFormData({ ...formData, kode: e.target.value })
@@ -541,14 +532,14 @@ export default function EbupotPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Dasar Pengenaan Pajak (Rp){" "}
                         <span className="text-red-500">*</span>
                       </label>
                       <input
                         required
                         type="text"
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1 font-bold"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 font-bold focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formatCurrency(formData.dpp_bppu)}
                         onChange={(e) =>
                           handleMoneyChange("dpp_bppu", e.target.value)
@@ -559,15 +550,14 @@ export default function EbupotPage() {
                   </div>
                 )}
 
-                {/* --- KHUSUS BP-21 --- */}
                 {activeTab === "BP-21" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Status PTKP <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.status_ptkp}
                         onChange={(e) =>
                           setFormData({
@@ -584,11 +574,11 @@ export default function EbupotPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Kode Objek Pajak <span className="text-red-500">*</span>
                       </label>
                       <select
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.kode}
                         onChange={(e) =>
                           setFormData({ ...formData, kode: e.target.value })
@@ -607,14 +597,14 @@ export default function EbupotPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         Penghasilan Bruto (Rp){" "}
                         <span className="text-red-500">*</span>
                       </label>
                       <input
                         required
                         type="text"
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1 font-bold"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 font-bold focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formatCurrency(formData.bruto_bp21)}
                         onChange={(e) =>
                           handleMoneyChange("bruto_bp21", e.target.value)
@@ -623,13 +613,13 @@ export default function EbupotPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-500">
+                      <label className="text-xs font-bold text-slate-500 uppercase">
                         DPP (%) <span className="text-red-500">*</span>
                       </label>
                       <input
                         required
                         type="number"
-                        className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                        className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                         value={formData.persentase_dpp}
                         onChange={(e) =>
                           setFormData({
@@ -642,16 +632,15 @@ export default function EbupotPage() {
                   </div>
                 )}
 
-                {/* --- SHARED INPUTS --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Tarif (%) <span className="text-red-500">*</span>
                     </label>
                     <input
                       required
                       type="number"
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.tarif}
                       onChange={(e) =>
                         setFormData({ ...formData, tarif: e.target.value })
@@ -660,18 +649,18 @@ export default function EbupotPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Pajak Penghasilan (Rp){" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <input
                       required
                       type="text"
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1 font-bold bg-gray-50 text-emerald-700"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 font-bold bg-slate-50 text-slate-700"
                       value={formatCurrency(formData.pph)}
                       onChange={(e) => handleMoneyChange("pph", e.target.value)}
                     />
-                    <p className="text-[10px] text-gray-400 mt-1">
+                    <p className="text-[10px] text-slate-400 mt-1">
                       *Otomatis dihitung, dapat diedit
                     </p>
                   </div>
@@ -680,16 +669,16 @@ export default function EbupotPage() {
 
               {/* III. DOKUMEN REFERENSI */}
               <section>
-                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 border-b pb-2">
+                <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
                   III. Dokumen Referensi
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Jenis Dokumen
                     </label>
                     <select
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.jenis_dokumen}
                       onChange={(e) =>
                         setFormData({
@@ -707,11 +696,11 @@ export default function EbupotPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Nomor Dokumen
                     </label>
                     <input
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.no_dokumen}
                       onChange={(e) =>
                         setFormData({ ...formData, no_dokumen: e.target.value })
@@ -720,12 +709,12 @@ export default function EbupotPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-500">
+                    <label className="text-xs font-bold text-slate-500 uppercase">
                       Tanggal Dokumen
                     </label>
                     <input
                       type="date"
-                      className="w-full border rounded-lg p-2.5 text-sm mt-1"
+                      className="w-full border border-slate-300 rounded-lg p-2.5 text-sm mt-1 focus:ring-2 focus:ring-slate-500 outline-none"
                       value={formData.tanggal_dokumen}
                       onChange={(e) =>
                         setFormData({
@@ -738,11 +727,11 @@ export default function EbupotPage() {
                 </div>
               </section>
 
-              <div className="pt-6 flex gap-3 border-t border-gray-100 sticky bottom-0 bg-white z-10">
+              <div className="pt-6 flex gap-3 border-t border-slate-100 sticky bottom-0 bg-white z-10">
                 <button
                   onClick={(e) => handleSubmit(e, "Draft")}
                   disabled={isSubmitting}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors flex justify-center items-center gap-2"
+                  className="flex-1 py-3 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-lg hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
                 >
                   {isSubmitting ? (
                     <Loader2 className="animate-spin" size={16} />
@@ -753,7 +742,7 @@ export default function EbupotPage() {
                 <button
                   onClick={(e) => handleSubmit(e, "Terbit")}
                   disabled={isSubmitting}
-                  className={`flex-1 py-3 text-white font-bold text-sm rounded-lg transition-colors flex justify-center items-center gap-2 shadow-md ${activeTab === "BPPU" ? "bg-blue-600 hover:bg-blue-700" : "bg-emerald-600 hover:bg-emerald-700"}`}
+                  className="flex-1 py-3 bg-slate-900 text-white font-bold text-sm rounded-lg hover:bg-slate-800 transition-all shadow-md flex justify-center items-center gap-2"
                 >
                   {isSubmitting ? (
                     <Loader2 className="animate-spin" size={16} />
@@ -763,6 +752,42 @@ export default function EbupotPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL KONFIRMASI DELETE --- */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">
+                  Hapus Data?
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak
+                  dapat dibatalkan.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setDeleteId(null)}
+                  className="flex-1 py-2.5 text-slate-700 font-bold text-sm border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={onConfirmDelete}
+                  className="flex-1 py-2.5 bg-red-600 text-white font-bold text-sm rounded-lg hover:bg-red-700 shadow-md transition-colors"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

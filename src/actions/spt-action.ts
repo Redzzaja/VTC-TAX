@@ -2,6 +2,12 @@
 
 import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 // --- 1. AMBIL LIST SPT ---
 export async function getSptListAction() {
@@ -64,6 +70,27 @@ export async function saveSptDraftAction(data: any) {
       success: false,
       message: error.message || "Gagal menyimpan draft SPT.",
     };
+  }
+}
+
+export async function updateSptContentAction(id: number, formData: any) {
+  const client = await pool.connect();
+  try {
+    // Update data_json dan nominal (jika ada perubahan hitungan)
+    await client.query(
+      `UPDATE spt_logs 
+       SET data_json = $1, nominal = $2 
+       WHERE id = $3`,
+      [JSON.stringify(formData), formData.induk?.pph_kurang_bayar || 0, id],
+    );
+
+    revalidatePath("/dashboard/simulasi/coretax");
+    return { success: true, message: "Draft berhasil disimpan" };
+  } catch (error) {
+    console.error("Gagal update SPT:", error);
+    return { success: false, message: "Gagal menyimpan data" };
+  } finally {
+    client.release();
   }
 }
 

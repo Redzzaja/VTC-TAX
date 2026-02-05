@@ -88,12 +88,14 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS spt_logs (
         id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         jenis_spt VARCHAR(100) NOT NULL,
         masa VARCHAR(20) NOT NULL,
         tahun VARCHAR(10) NOT NULL,
         pembetulan INT DEFAULT 0,
         status VARCHAR(50) DEFAULT 'Draft',
         nominal NUMERIC(15, 2) DEFAULT 0,
+        data_json JSONB DEFAULT '{}'::jsonb,  -- TAMBAHAN PENTING
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);

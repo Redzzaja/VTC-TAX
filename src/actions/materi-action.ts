@@ -37,7 +37,7 @@ const learningMaterials = [
     id: 5,
     title: "Tutorial e-Bupot 21/26",
     desc: "Langkah-langkah pembuatan bukti potong.",
-    category: "Tutorial",
+    category: "Video",
     type: "Video File",
     url: "https://youtu.be/FGi3B5OTGmQ?si=u1E9_-s_fTiGlHA7",
   },
