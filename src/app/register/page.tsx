@@ -25,27 +25,34 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in duration-500">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 relative overflow-hidden">
+      {/* Background Decoration */}
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black z-0" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-slate-800/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-yellow-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Register Card */}
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in duration-500 relative z-10 border border-slate-800/10">
         {/* Header Section */}
         <div className="bg-slate-50 p-6 text-center border-b border-slate-100 relative">
           <Link
             href="/"
-            className="absolute left-4 top-6 text-slate-400 hover:text-blue-600 transition-colors"
+            className="absolute left-4 top-6 text-slate-400 hover:text-slate-800 transition-colors p-1 hover:bg-slate-200 rounded-full"
           >
             <ArrowLeft size={20} />
           </Link>
-          <div className="mx-auto w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 p-2">
-            <Image
-              src="/favicon.ico"
-              alt="Logo VTC"
-              width={30}
-              height={30}
-              className="object-contain"
-            />
+          <div className="mx-auto w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-3 p-2 border border-slate-200">
+            <div className="relative w-8 h-8">
+              <Image
+                src="/favicon.ico"
+                alt="VTC Logo"
+                fill
+                className="object-contain"
+              />
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-800">Daftar Akun Baru</h1>
-          <p className="text-slate-500 text-xs">
+          <h1 className="text-xl font-bold text-slate-900">Buat Akun Baru</h1>
+          <p className="text-slate-500 text-xs mt-1">
             Bergabunglah dengan komunitas Relawan Pajak
           </p>
         </div>
@@ -55,11 +62,11 @@ export default function RegisterPage() {
           <form action={formAction} className="space-y-4">
             {/* Nama Lengkap */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide ml-1">
                 Nama Lengkap
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-900 transition-colors">
                   <User size={18} />
                 </div>
                 <input
@@ -67,18 +74,18 @@ export default function RegisterPage() {
                   type="text"
                   required
                   placeholder="Contoh: Budi Santoso"
-                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Username */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide ml-1">
                 Username
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-900 transition-colors">
                   <ShieldCheck size={18} />
                 </div>
                 <input
@@ -86,18 +93,18 @@ export default function RegisterPage() {
                   type="text"
                   required
                   placeholder="Buat username unik"
-                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wide ml-1">
                 Password
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-900 transition-colors">
                   <Key size={18} />
                 </div>
                 <input
@@ -105,7 +112,7 @@ export default function RegisterPage() {
                   type="password"
                   required
                   placeholder="Minimal 6 karakter"
-                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-all"
                 />
               </div>
             </div>
@@ -115,7 +122,7 @@ export default function RegisterPage() {
               <div
                 className={`flex items-center gap-2 text-xs font-medium p-3 rounded-lg border animate-pulse ${
                   state.success
-                    ? "bg-green-50 text-green-700 border-green-200"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : "bg-red-50 text-red-600 border-red-200"
                 }`}
               >
@@ -127,15 +134,20 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full mt-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full mt-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group"
             >
               {isPending ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" /> Memproses...
+                  <Loader2 size={18} className="animate-spin text-slate-400" />
+                  <span className="text-slate-200">Memproses...</span>
                 </>
               ) : (
                 <>
-                  <UserPlus size={18} /> Daftar Akun
+                  <UserPlus
+                    size={18}
+                    className="text-yellow-500 group-hover:text-white transition-colors"
+                  />{" "}
+                  Daftar Akun
                 </>
               )}
             </button>
@@ -147,7 +159,7 @@ export default function RegisterPage() {
               Sudah memiliki akun?{" "}
               <Link
                 href="/"
-                className="font-bold text-blue-700 hover:text-blue-900 hover:underline transition-colors"
+                className="font-bold text-slate-900 hover:text-slate-700 hover:underline transition-colors decoration-2 underline-offset-4"
               >
                 Login disini
               </Link>
