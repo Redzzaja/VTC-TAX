@@ -42,62 +42,70 @@ export default function TaxCalculatorPage() {
   >("BADAN");
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Tombol Kembali */}
-      <div>
-        <Link
-          href="/dashboard/simulasi"
-          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-medium text-sm mb-2"
-        >
-          <ArrowLeft size={18} /> Kembali ke Menu Simulasi
-        </Link>
-      </div>
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    // Container Utama: Full Width & No Scroll
+    <div className="w-full max-w-[100vw] overflow-x-hidden animate-in fade-in pb-20">
+      {/* Auto Center Container */}
+      <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-6">
+        {/* Tombol Kembali */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Calculator className="text-slate-600" /> Kalkulator Perpajakan
+          <Link
+            href="/dashboard/simulasi"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors font-medium text-xs md:text-sm"
+          >
+            <ArrowLeft size={16} /> Kembali ke Menu Simulasi
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Calculator className="text-slate-600 w-5 h-5 md:w-7 md:h-7 shrink-0" />
+            <span>Kalkulator Perpajakan</span>
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-xs md:text-sm text-slate-500 mt-1 leading-snug">
             Hitung estimasi pajak Anda dengan cepat dan akurat.
           </p>
         </div>
-      </div>
 
-      {/* Navigation Tabs (Monokrom) */}
-      <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-        <div className="flex space-x-1 min-w-max">
-          {[
-            { id: "BADAN", label: "PPh Badan", icon: Building2 },
-            { id: "KPLN", label: "Kredit LN", icon: Globe },
-            { id: "PENYUSUTAN", label: "Penyusutan", icon: TrendingDown },
-            { id: "PPN", label: "PPN", icon: Receipt },
-            { id: "PKB", label: "PKB (Kendaraan)", icon: Car },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-            </button>
-          ))}
+        {/* Navigation Tabs (STACKED GRID - NO SCROLL) */}
+        <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            {[
+              { id: "BADAN", label: "PPh Badan", icon: Building2 },
+              { id: "KPLN", label: "Kredit LN", icon: Globe },
+              { id: "PENYUSUTAN", label: "Penyusutan", icon: TrendingDown },
+              { id: "PPN", label: "PPN", icon: Receipt },
+              { id: "PKB", label: "PKB (Motor/Mobil)", icon: Car },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex flex-col md:flex-row items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs md:text-sm font-bold transition-all w-full text-center md:text-left ${
+                  activeTab === tab.id
+                    ? "bg-slate-900 text-white shadow-md ring-1 ring-slate-700"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <tab.icon
+                  size={18}
+                  className={
+                    activeTab === tab.id ? "text-yellow-500" : "text-slate-400"
+                  }
+                />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Content Area */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 min-h-125">
-        {activeTab === "BADAN" && <CalcBadan />}
-        {activeTab === "KPLN" && <CalcKpln />}
-        {activeTab === "PENYUSUTAN" && <CalcPenyusutan />}
-        {activeTab === "PPN" && <CalcPpn />}
-        {activeTab === "PKB" && <CalcPkb />}
+        {/* Content Area */}
+        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 md:p-6 min-h-[400px]">
+          {activeTab === "BADAN" && <CalcBadan />}
+          {activeTab === "KPLN" && <CalcKpln />}
+          {activeTab === "PENYUSUTAN" && <CalcPenyusutan />}
+          {activeTab === "PPN" && <CalcPpn />}
+          {activeTab === "PKB" && <CalcPkb />}
+        </div>
       </div>
     </div>
   );
@@ -182,50 +190,46 @@ function CalcBadan() {
   };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs md:text-sm font-bold text-slate-700">
           FORMULIR PPh BADAN{" "}
-          <span className="text-slate-400 font-normal">
+          <span className="text-slate-400 font-normal block md:inline">
             | Sesuai UU HPP & PP 55 Tahun 2022
           </span>
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Jenis Wajib Pajak <span className="text-red-500">*</span>
           </label>
           <select
-            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             value={jenis}
             onChange={(e) => setJenis(e.target.value)}
           >
-            <option value="UMUM">
-              WP Badan Umum (Tarif Pasal 17 / Fasilitas 31E)
-            </option>
-            <option value="TBK">
-              WP Badan Terbuka (Tbk) - Diskon Tarif 3%
-            </option>
-            <option value="UMKM">WP Badan UMKM (PP 55 - Final 0.5%)</option>
+            <option value="UMUM">WP Badan Umum (Tarif Pasal 17)</option>
+            <option value="TBK">WP Badan Terbuka (Tbk)</option>
+            <option value="UMKM">WP Badan UMKM (PP 55 - Final)</option>
           </select>
         </div>
 
         {note && (
-          <div className="text-xs text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic">
+          <div className="text-[10px] md:text-xs text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 italic">
             {note}
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Peredaran Bruto (Omset) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold text-sm">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               placeholder="0"
               value={formatNumberDots(omset)}
               onChange={(e) => setOmset(e.target.value)}
@@ -235,17 +239,17 @@ function CalcBadan() {
 
         {jenis !== "UMKM" && (
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Penghasilan Kena Pajak (PKP){" "}
               <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
+              <span className="absolute left-3 top-2.5 text-slate-500 font-bold text-sm">
                 Rp
               </span>
               <input
                 type="text"
-                className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+                className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
                 placeholder="0"
                 value={formatNumberDots(pkp)}
                 onChange={(e) => setPkp(e.target.value)}
@@ -257,13 +261,13 @@ function CalcBadan() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2 text-sm"
           >
-            <RotateCcw size={18} /> RESET
+            <RotateCcw size={16} /> RESET
           </button>
           <button
             onClick={calculate}
-            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95 text-sm"
           >
             HITUNG PAJAK
           </button>
@@ -271,27 +275,31 @@ function CalcBadan() {
       </div>
 
       {/* OUTPUT PPH BADAN */}
-      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
-        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-5 md:p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700 h-fit">
+        <h6 className="text-slate-400 font-bold text-[10px] md:text-xs tracking-wider uppercase mb-2">
           PPh BADAN TERUTANG
         </h6>
-        <div className="text-3xl font-bold mb-6 text-yellow-500">
+        <div className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-yellow-500 break-all">
           {result ? formatRupiah(result.total) : "Rp 0"}
         </div>
 
         {result && (
-          <div className="w-full text-left space-y-4">
+          <div className="w-full text-left space-y-3">
             <div className="bg-white/10 p-3 rounded-lg border border-white/10">
-              <div className="text-xs text-slate-400 uppercase font-bold mb-1">
+              <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">
                 Skema Tarif
               </div>
-              <div className="font-bold text-white text-sm">{result.skema}</div>
+              <div className="font-bold text-white text-xs md:text-sm">
+                {result.skema}
+              </div>
             </div>
             <div className="bg-white/10 p-3 rounded-lg border border-white/10">
-              <div className="text-xs text-slate-400 uppercase font-bold mb-1">
+              <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">
                 Tarif Efektif
               </div>
-              <div className="font-bold text-white text-sm">{result.tarif}</div>
+              <div className="font-bold text-white text-xs md:text-sm">
+                {result.tarif}
+              </div>
             </div>
           </div>
         )}
@@ -366,35 +374,35 @@ function CalcKpln() {
   };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       <div className="md:col-span-2 space-y-6">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs md:text-sm font-bold text-slate-700">
           KREDIT PAJAK LUAR NEGERI{" "}
-          <span className="text-slate-400 font-normal">
-            | Metode Ordinary Credit per Negara
+          <span className="text-slate-400 font-normal block md:inline">
+            | Metode Ordinary Credit
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
-              Penghasilan Neto Dalam Negeri (Rp){" "}
-              <span className="text-red-500">*</span>
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
+              Penghasilan Neto Dalam Negeri
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              placeholder="Rp"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={formatNumberDots(netoDn)}
               onChange={(e) => setNetoDn(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
-              Tarif PPh Badan (%) <span className="text-red-500">*</span>
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
+              Tarif PPh Badan (%)
             </label>
             <input
               type="number"
-              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={tarif}
               onChange={(e) => setTarif(Number(e.target.value))}
             />
@@ -402,13 +410,13 @@ function CalcKpln() {
         </div>
 
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-          <h6 className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
-            <Plus size={14} /> TAMBAH SUMBER PENGHASILAN LN
+          <h6 className="text-[10px] md:text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
+            <Plus size={12} /> TAMBAH SUMBER PENGHASILAN LN
           </h6>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="md:col-span-1">
               <select
-                className="w-full border border-slate-300 p-2 rounded text-sm bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+                className="w-full border border-slate-300 p-2 rounded text-sm bg-white focus:ring-1 focus:ring-slate-500 outline-none"
                 value={formNegara}
                 onChange={(e) => setFormNegara(e.target.value)}
               >
@@ -417,7 +425,7 @@ function CalcKpln() {
                   "Singapura",
                   "Malaysia",
                   "Jepang",
-                  "Amerika Serikat",
+                  "USA",
                   "Inggris",
                   "Australia",
                   "China",
@@ -434,8 +442,8 @@ function CalcKpln() {
             <div className="md:col-span-1">
               <input
                 type="text"
-                placeholder="Neto LN (Rp)"
-                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-2 focus:ring-slate-500 outline-none"
+                placeholder="Neto LN"
+                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-1 focus:ring-slate-500 outline-none"
                 value={formatNumberDots(formNeto)}
                 onChange={(e) => setFormNeto(e.target.value)}
               />
@@ -443,8 +451,8 @@ function CalcKpln() {
             <div className="md:col-span-1">
               <input
                 type="text"
-                placeholder="Pajak LN (Rp)"
-                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-2 focus:ring-slate-500 outline-none"
+                placeholder="Pajak LN"
+                className="w-full border border-slate-300 p-2 rounded text-sm focus:ring-1 focus:ring-slate-500 outline-none"
                 value={formatNumberDots(formPajak)}
                 onChange={(e) => setFormPajak(e.target.value)}
               />
@@ -460,9 +468,10 @@ function CalcKpln() {
           </div>
         </div>
 
+        {/* Responsive Table Wrapper */}
         <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-xs">
+          <table className="w-full text-xs md:text-sm text-left whitespace-nowrap min-w-[500px]">
+            <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[10px] md:text-xs">
               <tr>
                 <th className="p-3">Negara</th>
                 <th className="p-3 text-right">Neto LN</th>
@@ -477,7 +486,7 @@ function CalcKpln() {
                     colSpan={4}
                     className="p-4 text-center text-slate-400 italic"
                   >
-                    Belum ada data negara ditambahkan.
+                    Belum ada data.
                   </td>
                 </tr>
               ) : (
@@ -510,42 +519,42 @@ function CalcKpln() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2 text-sm"
           >
-            <RotateCcw size={18} /> RESET
+            <RotateCcw size={16} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95 text-sm"
           >
             HITUNG KREDIT
           </button>
         </div>
       </div>
 
-      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 shadow-xl flex flex-col justify-between border border-slate-700">
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-5 md:p-6 shadow-xl flex flex-col justify-between border border-slate-700 h-fit">
         <div>
-          <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+          <h6 className="text-slate-400 font-bold text-[10px] md:text-xs tracking-wider uppercase mb-2">
             TOTAL KREDIT PPh 24
           </h6>
-          <div className="text-3xl font-bold mb-6 text-yellow-500">
+          <div className="text-2xl md:text-3xl font-bold mb-6 text-yellow-500 break-all">
             {formatRupiah(result.credit)}
           </div>
 
           <div className="space-y-4">
             <div className="bg-white/10 p-3 rounded-lg border border-white/10">
-              <p className="text-xs text-slate-400 uppercase font-bold mb-1">
+              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">
                 Total PKP
               </p>
-              <p className="font-mono text-lg font-bold">
+              <p className="font-mono text-sm md:text-lg font-bold break-all">
                 {formatRupiah(result.totalPkp)}
               </p>
             </div>
             <div className="bg-white/10 p-3 rounded-lg border border-white/10">
-              <p className="text-xs text-slate-400 uppercase font-bold mb-1">
+              <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">
                 Total PPh Terutang
               </p>
-              <p className="font-mono text-lg font-bold">
+              <p className="font-mono text-sm md:text-lg font-bold break-all">
                 {formatRupiah(result.totalTax)}
               </p>
             </div>
@@ -655,33 +664,33 @@ function CalcPenyusutan() {
   };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs md:text-sm font-bold text-slate-700">
           PENYUSUTAN FISKAL{" "}
-          <span className="text-slate-400 font-normal">
+          <span className="text-slate-400 font-normal block md:inline">
             | Metode Garis Lurus & Saldo Menurun
           </span>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Tahun SPT Pelaporan
             </label>
             <input
               type="number"
-              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={tahunSpt}
               onChange={(e) => setTahunSpt(Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Akhir Tahun Buku
             </label>
             <select
-              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={akhirBuku}
               onChange={(e) => setAkhirBuku(e.target.value)}
             >
@@ -693,24 +702,24 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Harga Perolehan (Rp)
           </label>
           <input
             type="text"
-            className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             value={formatNumberDots(harga)}
             onChange={(e) => setHarga(e.target.value)}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Waktu Perolehan
           </label>
           <div className="flex gap-2">
             <select
-              className="w-2/3 border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-2/3 border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={beliBulan}
               onChange={(e) => setBeliBulan(e.target.value)}
             >
@@ -735,7 +744,7 @@ function CalcPenyusutan() {
             </select>
             <input
               type="number"
-              className="w-1/3 border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-1/3 border border-slate-300 p-2.5 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={beliTahun}
               onChange={(e) => setBeliTahun(e.target.value)}
             />
@@ -743,12 +752,12 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">
             Jenis Harta
           </label>
           <div className="flex gap-4">
             <label
-              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "HARTA" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center text-xs md:text-sm font-medium transition-colors ${jenisHarta === "HARTA" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
             >
               <input
                 type="radio"
@@ -761,7 +770,7 @@ function CalcPenyusutan() {
               Harta Berwujud
             </label>
             <label
-              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center font-medium transition-colors ${jenisHarta === "BANGUNAN" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
+              className={`flex-1 border p-3 rounded-lg cursor-pointer text-center text-xs md:text-sm font-medium transition-colors ${jenisHarta === "BANGUNAN" ? "bg-slate-100 border-slate-400 text-slate-900" : "bg-white border-slate-200 text-slate-500"}`}
             >
               <input
                 type="radio"
@@ -777,11 +786,11 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Kelompok Harta
           </label>
           <select
-            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             value={kelompok}
             onChange={(e) => setKelompok(e.target.value)}
           >
@@ -806,11 +815,11 @@ function CalcPenyusutan() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Metode Penyusutan
           </label>
           <select
-            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             value={metode}
             onChange={(e) => setMetode(e.target.value)}
             disabled={jenisHarta === "BANGUNAN"}
@@ -825,13 +834,13 @@ function CalcPenyusutan() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2 text-sm"
           >
-            <RotateCcw size={18} /> RESET
+            <RotateCcw size={16} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95 text-sm"
           >
             HITUNG PENYUSUTAN
           </button>
@@ -839,37 +848,37 @@ function CalcPenyusutan() {
       </div>
 
       {/* OUTPUT PENYUSUTAN */}
-      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col border border-slate-700 shadow-xl h-fit">
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-5 md:p-6 flex flex-col border border-slate-700 shadow-xl h-fit">
         {!summary ? (
-          <div className="h-40 flex flex-col items-center justify-center text-slate-500 italic">
+          <div className="h-40 flex flex-col items-center justify-center text-slate-500 italic text-xs md:text-sm">
             <TrendingDown size={32} className="mb-2 opacity-50" />
             Hasil perhitungan akan muncul di sini.
           </div>
         ) : (
           <div className="space-y-6">
             <div>
-              <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-1">
+              <h6 className="text-slate-400 font-bold text-[10px] md:text-xs tracking-wider uppercase mb-1">
                 BEBAN PENYUSUTAN TAHUN {tahunSpt}
               </h6>
-              <div className="text-3xl font-bold text-yellow-500">
+              <div className="text-2xl md:text-3xl font-bold text-yellow-500 break-all">
                 {formatRupiah(summary.beban)}
               </div>
             </div>
 
             <div className="pt-4 border-t border-slate-700 space-y-4">
               <div>
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">
+                <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">
                   Akumulasi Penyusutan
                 </div>
-                <div className="text-lg font-bold text-white">
+                <div className="text-sm md:text-lg font-bold text-white break-all">
                   {formatRupiah(summary.akum)}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-slate-400 font-bold uppercase mb-1">
+                <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">
                   Nilai Buku Akhir
                 </div>
-                <div className="text-lg font-bold text-white">
+                <div className="text-sm md:text-lg font-bold text-white break-all">
                   {formatRupiah(summary.buku)}
                 </div>
               </div>
@@ -879,10 +888,10 @@ function CalcPenyusutan() {
 
         {hasil.length > 0 && (
           <div className="mt-6 pt-4 border-t border-slate-700">
-            <div className="text-xs text-slate-500 uppercase font-bold mb-2">
+            <div className="text-[10px] text-slate-500 uppercase font-bold mb-2">
               Rincian Per Tahun
             </div>
-            <div className="max-h-40 overflow-y-auto pr-1">
+            <div className="max-h-40 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
               <table className="w-full text-xs text-left text-slate-300">
                 <tbody>
                   {hasil.map((row) => (
@@ -921,20 +930,20 @@ function CalcPpn() {
   };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs md:text-sm font-bold text-slate-700">
           KALKULATOR PPN{" "}
-          <span className="text-slate-400 font-normal">
+          <span className="text-slate-400 font-normal block md:inline">
             | UU HPP - Tarif Efektif 12% (2025)
           </span>
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Jenis Pengenaan PPN <span className="text-red-500">*</span>
           </label>
           <select
-            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             value={jenis}
             onChange={(e) => setJenis(e.target.value)}
           >
@@ -947,16 +956,16 @@ function CalcPpn() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Dasar Pengenaan Pajak (DPP) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold text-sm">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               placeholder="0"
               value={formatNumberDots(dpp)}
               onChange={(e) => setDpp(e.target.value)}
@@ -964,21 +973,21 @@ function CalcPpn() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Tarif PPN (%)
           </label>
           <div className="relative">
             <input
               type="number"
-              className="w-full border border-slate-300 p-2.5 pr-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 pr-10 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />
-            <span className="absolute right-3 top-2.5 text-slate-500 font-bold">
+            <span className="absolute right-3 top-2.5 text-slate-500 font-bold text-sm">
               %
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-[10px] text-slate-500 mt-1">
             *Tarif standar 12% berlaku mulai 1 Januari 2025.
           </p>
         </div>
@@ -986,29 +995,29 @@ function CalcPpn() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2 text-sm"
           >
-            <RotateCcw size={18} /> RESET
+            <RotateCcw size={16} /> RESET
           </button>
           <button
             onClick={() =>
               setResult(Math.floor(parseNumber(dpp) * (rate / 100)))
             }
-            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95 text-sm"
           >
             HITUNG PPN
           </button>
         </div>
       </div>
 
-      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
-        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-5 md:p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700 h-fit">
+        <h6 className="text-slate-400 font-bold text-[10px] md:text-xs tracking-wider uppercase mb-2">
           PPN TERUTANG
         </h6>
-        <div className="text-3xl font-bold mb-4 text-emerald-400">
+        <div className="text-2xl md:text-3xl font-bold mb-4 text-emerald-400 break-all">
           {formatRupiah(result)}
         </div>
-        <div className="bg-white/10 p-3 rounded-lg text-xs text-slate-300 border border-white/10">
+        <div className="bg-white/10 p-3 rounded-lg text-[10px] md:text-xs text-slate-300 border border-white/10">
           Hasil perhitungan PPN muncul di sini.
         </div>
       </div>
@@ -1053,21 +1062,21 @@ function CalcPkb() {
   };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
       <div className="md:col-span-2 space-y-4">
-        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-sm font-bold text-slate-700">
+        <div className="bg-slate-50 p-3 rounded border border-slate-200 text-xs md:text-sm font-bold text-slate-700">
           PAJAK KENDARAAN BERMOTOR (PKB){" "}
-          <span className="text-slate-400 font-normal">
+          <span className="text-slate-400 font-normal block md:inline">
             | UU HKPD No. 1/2022 (Opsen 66%)
           </span>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             Jenis Kendaraan
           </label>
           <select
-            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+            className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
             onChange={(e) => {
               if (e.target.value === "MOTOR") setSwdkllj(35000);
               else setSwdkllj(143000);
@@ -1080,16 +1089,16 @@ function CalcPkb() {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1">
+          <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
             NJKB (Nilai Jual) <span className="text-red-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-2.5 text-slate-500 font-bold">
+            <span className="absolute left-3 top-2.5 text-slate-500 font-bold text-sm">
               Rp
             </span>
             <input
               type="text"
-              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 pl-10 rounded-lg focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               placeholder="0"
               value={formatNumberDots(njkb)}
               onChange={(e) => setNjkb(e.target.value)}
@@ -1099,11 +1108,11 @@ function CalcPkb() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Provinsi (Tarif Daerah)
             </label>
             <select
-              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={provinsi}
               onChange={(e) => setProvinsi(Number(e.target.value))}
             >
@@ -1117,11 +1126,11 @@ function CalcPkb() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Kepemilikan Ke-
             </label>
             <select
-              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={urutan}
               onChange={(e) => setUrutan(Number(e.target.value))}
             >
@@ -1136,11 +1145,11 @@ function CalcPkb() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Koefisien Bobot
             </label>
             <select
-              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-2 focus:ring-slate-500 outline-none"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-white focus:ring-1 focus:ring-slate-500 outline-none text-sm"
               value={bobot}
               onChange={(e) => setBobot(Number(e.target.value))}
             >
@@ -1151,20 +1160,19 @@ function CalcPkb() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">
+            <label className="block text-xs md:text-sm font-bold text-slate-700 mb-1">
               Biaya SWDKLLJ
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 p-2.5 rounded-lg bg-slate-100"
+              className="w-full border border-slate-300 p-2.5 rounded-lg bg-slate-100 text-sm"
               value={formatRupiah(swdkllj)}
               readOnly
             />
           </div>
         </div>
 
-        {/* Info Tarif Dinamis */}
-        <div className="flex gap-4 text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-200">
+        <div className="flex gap-4 text-[10px] md:text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-200">
           <span>
             Tarif PKB: <strong>{provinsi + (urutan - 1) * 0.5}%</strong>
           </span>
@@ -1176,13 +1184,13 @@ function CalcPkb() {
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleReset}
-            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2"
+            className="flex-1 bg-white border border-slate-300 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-50 transition-colors flex justify-center items-center gap-2 text-sm"
           >
-            <RotateCcw size={18} /> RESET
+            <RotateCcw size={16} /> RESET
           </button>
           <button
             onClick={hitung}
-            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95"
+            className="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 shadow-md transition-all active:scale-95 text-sm"
           >
             HITUNG PAJAK
           </button>
@@ -1190,29 +1198,29 @@ function CalcPkb() {
       </div>
 
       {/* OUTPUT PKB */}
-      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700">
-        <h6 className="text-slate-400 font-bold text-xs tracking-wider uppercase mb-2">
+      <div className="md:col-span-1 bg-slate-900 text-white rounded-xl p-5 md:p-6 flex flex-col justify-center items-center text-center shadow-xl border border-slate-700 h-fit">
+        <h6 className="text-slate-400 font-bold text-[10px] md:text-xs tracking-wider uppercase mb-2">
           TOTAL BAYAR (ESTIMASI)
         </h6>
-        <div className="text-3xl font-bold mb-6 text-yellow-500">
+        <div className="text-2xl md:text-3xl font-bold mb-6 text-orange-400 break-all">
           {result ? formatRupiah(result.total) : "Rp 0"}
         </div>
 
         {result ? (
           <div className="w-full text-left space-y-3">
-            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+            <div className="flex justify-between items-center text-xs md:text-sm border-b border-white/10 pb-2">
               <span className="text-slate-400">PKB Pokok</span>
               <span className="font-bold">
                 {formatNumberDots(result.pokok)}
               </span>
             </div>
-            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+            <div className="flex justify-between items-center text-xs md:text-sm border-b border-white/10 pb-2">
               <span className="text-slate-400">Opsen PKB (Kab/Kota)</span>
               <span className="font-bold">
                 {formatNumberDots(result.opsen)}
               </span>
             </div>
-            <div className="flex justify-between items-center text-sm pb-2">
+            <div className="flex justify-between items-center text-xs md:text-sm pb-2">
               <span className="text-slate-400">SWDKLLJ</span>
               <span className="font-bold text-yellow-500">
                 {formatNumberDots(swdkllj)}
