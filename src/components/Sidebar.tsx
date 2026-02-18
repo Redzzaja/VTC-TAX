@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/actions/logout";
 import {
@@ -15,6 +16,8 @@ import {
   GraduationCap,
   LogOut,
   X,
+  Layers,
+  GitBranch
 } from "lucide-react";
 
 const menuItems = [
@@ -32,12 +35,20 @@ const menuItems = [
   { name: "Materi Perpajakan", href: "/dashboard/materi", icon: BookOpen },
   { name: "Seleksi Relawan", href: "/dashboard/seleksi", icon: ClipboardCheck },
   { name: "Ruang Belajar", href: "/dashboard/belajar", icon: GraduationCap },
+  { type: "header", name: "Admin Area" },
+  { name: "Persetujuan Relawan", href: "/dashboard/admin/approval", icon: UserPlus },
+  { name: "Kelola Level", href: "/dashboard/admin/learning/levels", icon: Layers },
+  { name: "Kelola Sub-Level", href: "/dashboard/admin/learning/sublevels", icon: GitBranch }, // Need to import GitBranch/Layers
+  { name: "Kelola Materi", href: "/dashboard/admin/materials", icon: BookOpen },
+  { name: "Kelola Kuis", href: "/dashboard/admin/quizzes", icon: ClipboardCheck },
 ];
 
 export default function Sidebar({
   onMobileClose,
+  userRole,
 }: {
   onMobileClose?: () => void;
+  userRole?: string;
 }) {
   const pathname = usePathname();
 
@@ -46,7 +57,10 @@ export default function Sidebar({
       {/* Header / Brand */}
       <div className="p-6 border-b border-slate-900 flex justify-between items-center bg-slate-950 sticky top-0 z-10">
         <div>
-          <h1 className="text-xl font-bold text-yellow-500 tracking-wider flex items-center gap-2">
+          <h1 className="text-xl font-bold text-yellow-500 tracking-wider flex items-center gap-3">
+            <div className="relative w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 p-1">
+                <Image src="/favicon.ico" alt="Logo" width={24} height={24} className="object-contain" />
+            </div>
             COREVTC
           </h1>
           <p className="text-[10px] text-slate-500 mt-1 font-mono tracking-widest">
@@ -66,6 +80,31 @@ export default function Sidebar({
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item, index) => {
+          // Filter logic
+          // 1. Admin Area: Only for admins
+          if (item.name === "Admin Area" || item.href?.startsWith("/dashboard/admin")) {
+              if (userRole !== "admin") return null;
+          }
+
+          // 2. Taxation Menu: Hide for Admins (User/Relawan only)
+          const taxationItems = [
+            "Taxation", 
+            "Simulasi CoreVTC", 
+            "Perhitungan TER", 
+            "Kalkulator Pajak", 
+            "Pendaftaran Relawan", 
+            "Tanya Agent VTC",
+            "Materi Perpajakan",
+            "Seleksi Relawan",
+            "Ruang Belajar" 
+          ];
+          
+          // Ruang Belajar might be useful for admin to preview, but user said "taxation menu visible".
+          // Let's filter specific items or the whole Taxation section.
+          if (userRole === "admin" && taxationItems.includes(item.name)) {
+              return null;
+          }
+
           if (item.type === "header") {
             return (
               <div key={index} className="px-4 pt-6 pb-2">

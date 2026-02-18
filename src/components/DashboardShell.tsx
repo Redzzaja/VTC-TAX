@@ -14,10 +14,10 @@ export default function DashboardShell({
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900">
       {/* 1. Desktop Sidebar (Hidden di Mobile, Flex di LG) */}
       <div className="hidden lg:flex fixed left-0 top-0 bottom-0 z-50">
-        <Sidebar />
+        <Sidebar userRole={user.role} />
       </div>
 
       {/* 2. Mobile Sidebar (Overlay + Slide) */}
@@ -35,7 +35,7 @@ export default function DashboardShell({
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <Sidebar onMobileClose={() => setSidebarOpen(false)} />
+        <Sidebar onMobileClose={() => setSidebarOpen(false)} userRole={user.role} />
       </div>
 
       {/* 3. Konten Utama */}

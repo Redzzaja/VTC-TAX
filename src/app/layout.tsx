@@ -1,9 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Rajdhani, Barlow, Space_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner"; // <--- 1. Import Toaster
+import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-heading",
+});
+
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
+});
+
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "VTC Tax System",
@@ -17,11 +33,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={inter.className}>
+      <body
+        className={`${rajdhani.variable} ${barlow.variable} ${spaceMono.variable} font-sans antialiased`}
+      >
         {children}
 
-        {/* 2. Pasang Toaster di sini */}
-        {/* richColors membuat sukses jadi hijau, error jadi merah otomatis */}
         <Toaster position="top-center" richColors closeButton />
       </body>
     </html>

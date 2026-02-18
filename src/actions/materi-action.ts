@@ -1,57 +1,62 @@
 "use server";
 
-const learningMaterials = [
-  {
-    id: 1,
-    title: "Buku Saku PPh 21 (TER)",
-    desc: "Panduan lengkap perhitungan Tarif Efektif Rata-rata.",
-    category: "Modul",
-    type: "PDF",
-    url: "https://static.pajak.go.id/download/kalkulator/Buku_PPh2126_Release_20240108.pdf",
-  },
-  {
-    id: 2,
-    title: "Tabel Tarif TER (Excel)",
-    desc: "Sheet cek kategori otomatis.",
-    category: "Tools",
-    type: "XLSX",
-    url: "https://pajak.go.id/sites/default/files/2024-02/PMK%20168%20Tahun%202023%20Tentang%20PPh%20Pasal%2021%20TER.pdf",
-  },
-  {
-    id: 3,
-    title: "UU HPP No. 7 Tahun 2021",
-    desc: "Update Harmonisasi Peraturan.",
-    category: "Regulasi",
-    type: "PDF",
-    url: "https://pajak.go.id/sites/default/files/2021-12/Salinan%20UU%20Nomor%207%20Tahun%202021.pdf",
-  },
-  {
-    id: 4,
-    title: "PMK 168 Tahun 2023",
-    desc: "Petunjuk Pelaksanaan PPh.",
-    category: "Regulasi",
-    type: "PDF",
-    url: "https://jdih.kemenkeu.go.id/api/download/e60a82e0-b218-40f5-9d18-b924aa1e11ce/2023pmkeuangan168.pdf",
-  },
-  {
-    id: 5,
-    title: "Tutorial e-Bupot 21/26",
-    desc: "Langkah-langkah pembuatan bukti potong.",
-    category: "Video",
-    type: "Video File",
-    url: "https://youtu.be/FGi3B5OTGmQ?si=u1E9_-s_fTiGlHA7",
-  },
-  {
-    id: 6,
-    title: "Format Impor Excel DJP",
-    desc: "Template CSV/Excel lapor SPT.",
-    category: "Tools",
-    type: "XLSX",
-    url: "https://www.pajak.go.id/en/node/112031",
-  },
-];
+import { query } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+
+export type Material = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  url: string;
+  created_at: Date;
+};
 
 export async function getMateriListAction() {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { success: true, data: learningMaterials };
+  try {
+    const res = await query("SELECT * FROM materials ORDER BY created_at DESC");
+    return { success: true, data: res.rows as Material[] };
+  } catch (error) {
+    console.error("Error fetching materials:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function addMaterialAction(prevState: any, formData: FormData) {
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const category = formData.get("category") as string;
+  const type = formData.get("type") as string;
+  const url = formData.get("url") as string;
+
+  if (!title || !url) {
+    return { success: false, message: "Judul dan URL wajib diisi." };
+  }
+
+  try {
+    await query(
+      `INSERT INTO materials (title, description, category, type, url) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [title, description, category, type, url]
+    );
+    revalidatePath("/dashboard/materi");
+    revalidatePath("/dashboard/admin/materials");
+    return { success: true, message: "Materi berhasil ditambahkan." };
+  } catch (error) {
+    console.error("Error adding material:", error);
+    return { success: false, message: "Gagal menambahkan materi." };
+  }
+}
+
+export async function deleteMaterialAction(id: number) {
+  try {
+    await query("DELETE FROM materials WHERE id = $1", [id]);
+    revalidatePath("/dashboard/materi");
+    revalidatePath("/dashboard/admin/materials");
+    return { success: true, message: "Materi berhasil dihapus." };
+  } catch (error) {
+    console.error("Error deleting material:", error);
+    return { success: false, message: "Gagal menghapus materi." };
+  }
 }
