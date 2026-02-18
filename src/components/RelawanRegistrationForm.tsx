@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { registerRelawanAction } from "@/actions/relawan-action";
-import { UploadCloud, Send, User, Terminal, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { User, Loader2, Send, UploadCloud, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -17,195 +17,157 @@ export default function RelawanRegistrationForm() {
     initialState,
   );
 
-  // Staggered animation state
-  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (state.message) {
-        // ... (toast logic remains the same)
-      if (state.success) {
-        toast.success("ACCESS GRANTED", {
-          description: state.message,
-          duration: 4000,
-          className: "font-mono border-green-500/50 bg-black/90 text-green-400"
-        });
-      } else {
-        toast.error("ACCESS DENIED", {
-          description: state.message,
-          className: "font-mono border-red-500/50 bg-black/90 text-red-400"
-        });
-      }
+    if (state.message && !state.success) {
+      toast.error("Gagal", {
+        description: state.message,
+      });
     }
   }, [state]);
 
-  const inputClasses = "w-full bg-black/40 border border-[var(--color-border-dim)] px-4 py-3 text-[var(--foreground)] placeholder:text-zinc-600 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] outline-none transition-all font-mono text-sm uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const labelClasses = "block text-[10px] font-mono text-[var(--color-primary)] uppercase tracking-widest mb-1.5 opacity-80";
+  const labelClasses = "block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2";
+  const inputClasses = "block w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 outline-none transition-all";
+
+  if (state.success) {
+    return (
+      <div className="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-l-4 border-yellow-400 p-12 text-center animate-in fade-in zoom-in duration-500">
+          <div className="mx-auto w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
+             <Clock className="w-10 h-10 text-yellow-500" />
+          </div>
+          
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Pendaftaran Berhasil!</h2>
+          <p className="text-yellow-600 font-bold uppercase tracking-wider text-sm mb-6">Status: MENUNGGU KONFIRMASI</p>
+          
+          <div className="space-y-2 text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+             <p>Terima kasih telah mendaftar. Data Anda sedang ditinjau oleh tim admin kami.</p>
+          </div>
+
+          <div className="pt-6 border-t border-slate-50">
+             <p className="text-xs text-slate-400">
+                Mohon menunggu update selanjutnya. Cek halaman ini secara berkala.
+             </p>
+          </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`relative max-w-4xl mx-auto transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-        
-      {/* Technical Header */}
-      <div className="mb-8 border-l-2 border-[var(--color-primary)] pl-6 relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[var(--color-primary)]/10 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-out" />
-        <h1 className="text-4xl md:text-5xl font-bold font-heading uppercase text-white tracking-tight mb-2 flex items-center gap-4">
-          <Terminal size={36} className="text-[var(--color-primary)]" />
-          Operator // Registration
-        </h1>
-        <p className="font-mono text-[var(--color-accent)] text-sm tracking-widest">
-          UNIT: PAJAK // CLEARANCE: LEVEL 1 // STATUS: OPEN
+    <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      
+      {/* Header */}
+      <div className="p-8 pb-0">
+        <div className="flex items-center gap-3 mb-2">
+            <User className="w-6 h-6 text-slate-700" />
+            <h2 className="text-xl font-bold text-slate-900">Pendaftaran Relawan Pajak</h2>
+        </div>
+        <p className="text-slate-500 text-sm">
+            Bergabunglah menjadi bagian dari Relawan Pajak untuk Negeri. Silakan lengkapi formulir di bawah ini dengan data yang valid.
         </p>
       </div>
 
-      {/* Main Terminal Frame */}
-      <div className="backdrop-blur-xl bg-[var(--color-surface)]/80 border border-[var(--color-border-dim)] relative overflow-hidden shadow-2xl">
+      <form action={formAction} className="p-8 space-y-8">
         
-        {/* Decorative Top Bar */}
-        <div className="h-8 bg-[var(--color-surface-hover)] border-b border-[var(--color-border-dim)] flex items-center justify-between px-4">
-            <div className="flex gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500/50" />
-                <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
-                <div className="w-2 h-2 rounded-full bg-green-500/50" />
+        {/* Row 1: Nama & NIM */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+                <label className={labelClasses}>Nama Lengkap</label>
+                <input name="nama" type="text" required placeholder="Sesuai KTP" className={inputClasses} />
             </div>
-            <div className="font-mono text-[10px] text-zinc-500">SYS.VTC.TAX.V4.0.1</div>
+            <div className="space-y-1">
+                <label className={labelClasses}>NIM</label>
+                <input name="nim" type="text" required placeholder="Nomor Induk Mahasiswa" className={inputClasses} />
+            </div>
         </div>
 
-        <form action={formAction} className="p-6 md:p-8 space-y-8 relative z-10">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
-            
-            {/* Personal Identification Section */}
-            <div className="col-span-full mb-2 flex items-center gap-2 pb-2 border-b border-[var(--color-border-dim)]">
-                <div className="w-1 h-4 bg-[var(--color-accent)]" />
-                <span className="font-heading font-semibold text-lg tracking-wider text-zinc-300">01 // IDENTIFICATION</span>
+        {/* Row 2: Kampus & Jurusan */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+                <label className={labelClasses}>Asal Kampus</label>
+                <input name="universitas" type="text" required placeholder="Nama Universitas" className={inputClasses} />
             </div>
-
-            <div className="space-y-1 group">
-              <label className={labelClasses}>Full Name // Sesuai KTP</label>
-              <input name="nama" type="text" required placeholder="ENTER FULL NAME..." className={inputClasses} />
-              <div className="h-[1px] w-0 group-hover:w-full bg-[var(--color-primary)] transition-all duration-500" />
+            <div className="space-y-1">
+                <label className={labelClasses}>Jurusan / Prodi</label>
+                <input name="jurusan" type="text" required placeholder="Contoh: D3 Perpajakan" className={inputClasses} />
             </div>
+        </div>
 
-            <div className="space-y-1 group">
-              <label className={labelClasses}>NIM ID // STUDENT NUMBER</label>
-              <input name="nim" type="text" required placeholder="XXXXXXXX" className={inputClasses} />
+        {/* Row 3: Semester & WhatsApp */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-1">
+                <label className={labelClasses}>Semester</label>
+                <div className="relative">
+                    <select name="semester" className={`${inputClasses} appearance-none cursor-pointer`} required>
+                        <option value="" disabled selected>Pilih Semester</option>
+                        <option value="1">Semester 1</option>
+                        <option value="3">Semester 3</option>
+                        <option value="5">Semester 5</option>
+                        <option value="7">Semester 7</option>
+                        <option value="Akhir">Semester Akhir</option>
+                    </select>
+                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
             </div>
-
-            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div className="space-y-1 group">
-                    <label className={labelClasses}>Comm Link // WhatsApp</label>
-                    <input name="whatsapp" type="text" required placeholder="+62..." className={inputClasses} />
-                 </div>
-                 <div className="space-y-1 group">
-                    <label className={labelClasses}>Digital Mail // Email</label>
-                    <input name="email" type="email" required placeholder="USER@DOMAIN.AC.ID" className={inputClasses} />
-                 </div>
+            <div className="space-y-1">
+                <label className={labelClasses}>WhatsApp</label>
+                <input name="whatsapp" type="text" required placeholder="08xxxxxxxxxx" className={inputClasses} />
             </div>
+        </div>
 
+        {/* Row 4: Email */}
+        <div className="space-y-1">
+            <label className={labelClasses}>Email</label>
+            <input name="email" type="email" required placeholder="email@mahasiswa.ac.id" className={inputClasses} />
+        </div>
 
-             {/* Academic Data Section */}
-             <div className="col-span-full mt-6 mb-2 flex items-center gap-2 pb-2 border-b border-[var(--color-border-dim)]">
-                <div className="w-1 h-4 bg-[var(--color-accent)]" />
-                <span className="font-heading font-semibold text-lg tracking-wider text-zinc-300">02 // ACADEMIC DATA</span>
-            </div>
-
-            <div className="space-y-1 group">
-              <label className={labelClasses}>Origin // Campus</label>
-              <input name="universitas" type="text" required placeholder="UNIVERSITY NAME" className={inputClasses} />
-            </div>
-
-            <div className="space-y-1 group">
-              <label className={labelClasses}>Major // Department</label>
-              <input name="jurusan" type="text" required placeholder="TAXATION / ACCOUNTING" className={inputClasses} />
-            </div>
-
-            <div className="col-span-full space-y-1">
-              <label className={labelClasses}>Current Level // Semester</label>
-              <div className="grid grid-cols-4 gap-4">
-                  {[
-                      {label: "SEM 3", val: "3"},
-                      {label: "SEM 5", val: "5"},
-                      {label: "SEM 7", val: "7"},
-                      {label: "FINAL", val: "Akhir"}
-                  ].map((opt) => (
-                      <label key={opt.val} className="cursor-pointer relative group">
-                          <input type="radio" name="semester" value={opt.val} className="peer sr-only" required />
-                          <div className="border border-[var(--color-border-dim)] bg-black/20 p-3 text-center font-mono text-xs text-zinc-400 peer-checked:border-[var(--color-primary)] peer-checked:text-[var(--color-primary)] peer-checked:bg-[var(--color-primary)]/10 transition-all hover:border-zinc-500">
-                              {opt.label}
-                          </div>
-                      </label>
-                  ))}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="space-y-1 mt-8">
-            <label className={labelClasses}>Mission Statement // Motivation</label>
+        {/* Row 5: Motivasi */}
+        <div className="space-y-1">
+            <label className={labelClasses}>Motivasi Bergabung</label>
              <textarea
                 name="alasan"
                 rows={4}
                 required
-                placeholder="// INITIALIZE MOTIVATION PROTOCOL..."
-                className={`${inputClasses} font-sans normal-case tracking-normal min-h-[120px]`}
+                placeholder="Ceritakan motivasi Anda secara singkat dan jelas..."
+                className={`${inputClasses} tracking-normal min-h-[120px] resize-y`}
               ></textarea>
-          </div>
+        </div>
 
-          {/* Upload Section - Technical Zone */}
-          <div className="relative group cursor-pointer overflow-hidden rounded-none border border-dashed border-zinc-700 bg-black/20 hover:bg-[var(--color-primary)]/5 transition-all duration-300">
-            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-20" required />
-            <div className="p-8 flex flex-col items-center justify-center text-center relative z-10">
-                <div className="mb-4 p-4 rounded-full border border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/10 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(14,165,233,0.3)] transition-all">
-                    <UploadCloud size={32} strokeWidth={1.5} />
-                </div>
-                <h3 className="font-heading font-bold text-lg text-zinc-300 group-hover:text-white transition-colors">
-                    UPLOAD DATA PACKET
-                </h3>
-                <p className="font-mono text-xs text-zinc-500 mt-2">
-                    [CV_FILE] + [TRANSCRIPT_FILE] // MAX_SIZE: 2MB
-                </p>
-                <p className="font-mono text-[10px] text-[var(--color-accent)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    // WAITING FOR INPUT...
-                </p>
-            </div>
-            
-            {/* Scanline Effect */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-[var(--color-primary)]/20 shadow-[0_0_10px_vars(--color-primary)] animate-[scan_2s_linear_infinite] opacity-0 group-hover:opacity-100 pointer-events-none" />
-          </div>
+        {/* File Upload Placeholder */}
+        <div className="space-y-1">
+            <label className={labelClasses}>Berkas Pendukung</label>
+             <div className="relative group cursor-pointer border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all p-8 flex flex-col items-center justify-center text-center">
+                 <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                 <div className="bg-white p-3 rounded-full shadow-sm mb-3">
+                    <UploadCloud className="w-6 h-6 text-slate-400" />
+                 </div>
+                 <p className="text-sm font-medium text-slate-700">Klik untuk upload CV & Transkrip</p>
+                 <p className="text-xs text-slate-500 mt-1">Format PDF, Max 2MB</p>
+             </div>
+        </div>
 
-          <div className="flex justify-end pt-6 border-t border-[var(--color-border-dim)]">
-            <Button
+
+        {/* Submit */}
+        <div className="pt-4">
+             <Button
               type="submit"
               disabled={isPending}
-              className="relative overflow-hidden group bg-[var(--color-surface-hover)] hover:bg-[var(--color-primary)] text-white border border-[var(--color-border-bright)] hover:border-[var(--color-primary)] px-8 py-6 rounded-none font-mono text-sm tracking-widest transition-all clip-path-polygon"
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-6 rounded-xl font-bold shadow-lg shadow-slate-900/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base"
             >
-                <span className="relative z-10 flex items-center gap-3">
-                    {isPending ? (
-                        <>PROCESSING <span className="animate-pulse">_</span></>
-                    ) : (
-                        <>
-                            INITIATE_UPLOAD <Send size={16} />
-                        </>
-                    )}
-                </span>
-                
-                {/* Button Glitch Effect Background */}
-                <div className="absolute inset-0 bg-[var(--color-primary)] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
+                {isPending ? (
+                    <>
+                        <Loader2 className="animate-spin text-slate-400" size={20} />
+                        Memproses Pendaftaran...
+                    </>
+                ) : (
+                    <>
+                        Kirim Pendaftaran <Send size={18} />
+                    </>
+                )}
             </Button>
-          </div>
+        </div>
 
-        </form>
-      </div>
-      
-      {/* Decorative Footer Technical Text */}
-      <div className="flex justify-between mt-4 font-mono text-[10px] text-zinc-600 uppercase">
-        <span>Secure Connection // TLS 1.3</span>
-        <span>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
-      </div>
-
+      </form>
     </div>
   );
 }

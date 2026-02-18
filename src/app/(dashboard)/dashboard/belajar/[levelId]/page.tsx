@@ -104,7 +104,7 @@ export default async function LevelDetailPage({ params }: { params: Promise<{ le
                                        </Button>
                                    ) : (
                                        <Link href={`/dashboard/belajar/${level.id}/${sub.id}`}>
-                                            <Button className={cn("w-full shadow-sm", isCompleted ? "bg-slate-900 hover:bg-slate-800" : "bg-yellow-400 hover:bg-yellow-500 text-slate-900 border-none")}>
+                                            <Button className={cn("w-full shadow-sm", isCompleted ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-yellow-400 hover:bg-yellow-500 text-slate-900 border-none")}>
                                                 {isCompleted ? "Pelajari Lagi" : "Mulai Belajar"}
                                             </Button>
                                        </Link>

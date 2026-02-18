@@ -17,7 +17,8 @@ import {
   LogOut,
   X,
   Layers,
-  GitBranch
+  GitBranch,
+  FileQuestion
 } from "lucide-react";
 
 const menuItems = [
@@ -40,6 +41,7 @@ const menuItems = [
   { name: "Kelola Level", href: "/dashboard/admin/learning/levels", icon: Layers },
   { name: "Kelola Sub-Level", href: "/dashboard/admin/learning/sublevels", icon: GitBranch }, // Need to import GitBranch/Layers
   { name: "Kelola Materi", href: "/dashboard/admin/materials", icon: BookOpen },
+  { name: "Bank Soal Seleksi", href: "/dashboard/admin/seleksi-soal", icon: FileQuestion },
   { name: "Kelola Kuis", href: "/dashboard/admin/quizzes", icon: ClipboardCheck },
 ];
 

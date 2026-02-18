@@ -2,6 +2,7 @@
 
 import { query } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 // --- Types ---
 export type QuizLevel = {
@@ -99,6 +100,18 @@ export async function addQuestionAction(prevState: any, formData: FormData) {
   }
 }
 
+export async function deleteQuestionAction(id: number) {
+  try {
+    await query("DELETE FROM quiz_questions WHERE id = $1", [id]);
+    revalidatePath("/dashboard/admin/quizzes");
+    return { success: true, message: "Soal berhasil dihapus." };
+  } catch (error) {
+    console.error("Error deleting question:", error);
+    return { success: false, message: "Gagal menghapus soal." };
+  }
+}
+
+
 // --- User/Learning Actions ---
 
 export async function getUserProgressAction(username: string) {
@@ -134,16 +147,26 @@ export async function submitQuizAction(
 
     // 2. Fetch Questions & Calculate Score
     const questionsRes = await query(
-      "SELECT id, correct_answer FROM quiz_questions WHERE sub_level_id = $1",
+      "SELECT id, question_text, options, correct_answer, explanation FROM quiz_questions WHERE sub_level_id = $1",
       [subLevelId]
     );
     const questions = questionsRes.rows;
     
     let correctCount = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correct_answer) {
-        correctCount++;
-      }
+    const details = questions.map((q) => {
+      const userAnswer = answers[q.id];
+      const isCorrect = userAnswer === q.correct_answer;
+      if (isCorrect) correctCount++;
+      
+      return {
+        id: q.id,
+        question_text: q.question_text,
+        user_answer: userAnswer,
+        correct_answer: q.correct_answer,
+        explanation: q.explanation,
+        is_correct: isCorrect,
+        options: q.options // Include options if needed for display
+      };
     });
 
     const totalQuestions = questions.length;
@@ -183,14 +206,33 @@ export async function submitQuizAction(
         [userId, subLevelId, score, isPassed]
       );
     }
+    // ... (rest of logic) ...
+
+    // ... (rest of logic) ...
+
+    const resultData = { success: true, score, isPassed, totalQuestions, correctCount, details };
+    
+    // Store result in cookie to avoid long URL
+    const cookieStore = await cookies();
+    cookieStore.set(`quiz_result_${subLevelId}`, JSON.stringify(resultData), { 
+        path: '/', 
+        maxAge: 300 // 5 minutes 
+    });
 
     revalidatePath("/dashboard/belajar");
-    return { success: true, score, isPassed, totalQuestions, correctCount };
+    return { success: true };
 
   } catch (error) {
     console.error("Error submitting quiz:", error);
     return { success: false, message: "Gagal mengirim jawaban." };
   }
+}
+
+export async function resetQuizAction(subLevelId: number) {
+  const cookieStore = await cookies();
+  cookieStore.delete(`quiz_result_${subLevelId}`);
+  revalidatePath(`/dashboard/belajar`);
+  return { success: true };
 }
 
 // --- CRUD Levels & SubLevels (Admin) ---

@@ -1,18 +1,26 @@
 // src/lib/db.ts
 import { Pool } from "pg";
 
+const connectionString = process.env.DATABASE_URL;
+
+// Gunakan verify-full agar eksplisit & future-proof
+const sslParam = connectionString?.includes("?")
+  ? "&sslmode=verify-full"
+  : "?sslmode=verify-full";
+
+const finalConnectionString =
+  connectionString && !connectionString.includes("sslmode")
+    ? `${connectionString}${sslParam}`
+    : connectionString;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Penting untuk koneksi ke Neon
-  },
+  connectionString: finalConnectionString,
 });
 
 export async function query(text: string, params?: any[]) {
   const client = await pool.connect();
   try {
-    const res = await client.query(text, params);
-    return res;
+    return await client.query(text, params);
   } finally {
     client.release();
   }

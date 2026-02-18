@@ -57,36 +57,36 @@ export default async function RelawanPage() {
   if (volunteer.status === "DITERIMA" && !volunteer.test_taken_at) {
     return (
       <div className="max-w-2xl mx-auto pt-10 animate-in zoom-in-95 duration-500">
-        <Card className="border-l-4 border-l-green-500 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <CheckCircle className="w-32 h-32 text-green-500" />
-          </div>
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <CardTitle className="text-2xl">Selamat! Anda Lolos Administrasi</CardTitle>
-            <CardDescription>
-              Silakan lanjutkan ke tahap berikutnya.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <div className="bg-green-50 p-6 rounded-xl border border-green-100">
-                <p className="mb-2 text-slate-600">Anda terdaftar sebagai:</p>
-                <div className="font-bold text-xl text-slate-800">{volunteer.nama_lengkap}</div>
-                <div className="font-mono text-green-700">{volunteer.nim}</div>
-            </div>
-            
-            <p className="text-slate-600">
-              Langkah selanjutnya adalah mengerjakan <strong>Tes Seleksi Relawan</strong>. 
-              Tes ini akan menguji pengetahuan dasar perpajakan Anda.
-            </p>
+        <Card className="shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-slate-100 overflow-hidden">
+          <CardContent className="p-10 text-center flex flex-col items-center">
+             
+             {/* Icon */}
+             <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 relative">
+                <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-20"></div>
+                <CheckCircle className="w-12 h-12 text-green-500" strokeWidth={3} />
+             </div>
 
-            <Link href="/dashboard/seleksi">
-                <Button size="lg" className="w-full md:w-auto bg-green-600 hover:bg-green-700 shadow-md">
+             <h2 className="text-2xl font-bold text-slate-900 mb-2">Selamat! Anda Lolos Administrasi</h2>
+             <p className="text-slate-500 mb-8">Silakan lanjutkan ke tahap berikutnya.</p>
+
+             {/* User Details */}
+             <div className="bg-green-50/50 border border-green-100 rounded-2xl p-8 w-full max-w-md mb-8">
+                 <p className="text-slate-500 text-sm mb-2">Anda terdaftar sebagai:</p>
+                 <h3 className="text-xl font-bold text-slate-900">{volunteer.nama_lengkap}</h3>
+                 <p className="text-green-600 font-bold font-mono text-lg mt-1">{volunteer.nim}</p>
+             </div>
+
+             <p className="text-slate-500 text-sm max-w-md mb-8 leading-relaxed">
+               Langkah selanjutnya adalah mengerjakan <strong>Tes Seleksi Relawan</strong>. 
+               Tes ini akan menguji pengetahuan dasar perpajakan Anda.
+             </p>
+
+             <Link href="/dashboard/seleksi">
+                <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 px-8 py-6 h-auto text-base rounded-xl font-bold transition-all hover:scale-105 active:scale-95">
                     Lanjut Seleksi Sekarang
                 </Button>
-            </Link>
+             </Link>
+
           </CardContent>
         </Card>
       </div>

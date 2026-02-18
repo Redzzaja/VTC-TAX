@@ -9,12 +9,12 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-4 lg:p-8">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-4">
       {/* Centered Card Container */}
-      <div className="w-full max-w-7xl bg-white rounded-[2rem] overflow-hidden shadow-2xl flex flex-col lg:flex-row min-h-[85vh]">
+      <div className="w-full max-w-5xl bg-white rounded-[2rem] overflow-hidden shadow-2xl flex flex-col lg:flex-row min-h-[600px]">
         
         {/* Left Side - Image/Brand */}
-        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 bg-slate-900">
+        <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-slate-900">
           {/* Background Image */}
           <div className="absolute inset-0">
             <Image
@@ -46,12 +46,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                   </div>
               </div>
 
-              <div className="space-y-6 max-w-lg mb-12">
-                  <h2 className="text-6xl font-bold leading-tight tracking-tight drop-shadow-lg">
+              <div className="space-y-4 max-w-lg mb-8">
+                  <h2 className="text-5xl font-bold leading-tight tracking-tight drop-shadow-lg">
                       Tax Center<br />
                       <span className="text-white/80">Administration</span>
                   </h2>
-                  <p className="text-slate-300 text-xl font-light leading-relaxed max-w-md">
+                  <p className="text-slate-300 text-lg font-light leading-relaxed max-w-md">
                     Efficiently manage tax volunteers, learning modules, and selection processes in one centralized platform.
                   </p>
               </div>
@@ -63,8 +63,8 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         </div>
 
         {/* Right Side - Content Container */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-20 relative bg-white">
-          <div className="w-full max-w-md space-y-8">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative bg-white">
+          <div className="w-full max-w-sm space-y-4">
             {children}
           </div>
         </div>

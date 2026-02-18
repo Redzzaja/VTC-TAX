@@ -1,8 +1,9 @@
 "use client";
 
-import { Lock, Star, Trophy } from "lucide-react";
+import { Lock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
 
 interface Level {
   id: number;
@@ -15,12 +16,69 @@ interface Level {
 
 export default function LearningMap({ levels }: { levels: Level[] }) {
   const safeLevels = Array.isArray(levels) ? levels : [];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const trophyRef = useRef<HTMLDivElement>(null);
+  const [svgPath, setSvgPath] = useState("");
+
+  useEffect(() => {
+    function calculatePath() {
+      if (!containerRef.current || safeLevels.length === 0) return;
+      
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const relativeTop = containerRect.top;
+      const relativeLeft = containerRect.left;
+      const centerX = containerRect.width / 2;
+
+      let path = `M ${centerX} 0`; // Start at top center
+
+      // Connect to each node
+      safeLevels.forEach((_, index) => {
+        const node = nodeRefs.current[index];
+        if (node) {
+          const nodeRect = node.getBoundingClientRect();
+          const nodeX = nodeRect.left - relativeLeft + nodeRect.width / 2;
+          const nodeY = nodeRect.top - relativeTop + nodeRect.height / 2;
+          
+          // Draw a curve to the node
+          // Simple straight line for now, or curve
+          // Curved approach:
+          // prevY to nodeY
+          path += ` L ${nodeX} ${nodeY}`;
+        }
+      });
+
+      // Connect to Trophy
+      if (trophyRef.current) {
+        const trophyRect = trophyRef.current.getBoundingClientRect();
+        const trophyX = trophyRect.left - relativeLeft + trophyRect.width / 2;
+        const trophyY = trophyRect.top - relativeTop; // Top of trophy container
+        path += ` L ${trophyX} ${trophyY + 20}`; // +20 to go inside a bit
+      }
+
+      setSvgPath(path);
+    }
+
+    calculatePath();
+    window.addEventListener("resize", calculatePath);
+    return () => window.removeEventListener("resize", calculatePath);
+  }, [safeLevels.length]);
 
   return (
-    <div className="relative max-w-4xl mx-auto py-12 px-6">
-      {/* Background Path */}
-      {/* SVG Path to connect the nodes smoothly would be ideal, but for now using a clearer connector */}
-      <div className="absolute left-1/2 top-0 bottom-0 w-3 bg-slate-100 -translate-x-1/2 rounded-full z-0" />
+    <div ref={containerRef} className="relative max-w-4xl mx-auto py-12 px-6">
+      
+      {/* Dynamic SVG Path */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
+        <path
+          d={svgPath}
+          fill="none"
+          stroke="#cbd5e1" // slate-300
+          strokeWidth="4"
+          strokeDasharray="12 12"
+          strokeLinecap="round"
+          className="opacity-60"
+        />
+      </svg>
 
       <div className="relative z-10 space-y-24">
         {safeLevels.map((level, index) => {
@@ -32,24 +90,19 @@ export default function LearningMap({ levels }: { levels: Level[] }) {
                 className={cn(
                     "flex items-center w-full relative",
                     isEven ? "justify-start md:justify-end md:pr-10" : "justify-end md:justify-start md:pl-10",
-                    // For mobile, we might keep it centered or alternate less drastically, 
-                    // but for "game map" alternate is key.
-                    "justify-center md:flex-row" // Reset for mobile?
+                    "justify-center md:flex-row"
                 )}
             >
-                {/* 
-                   Zig-zag Layout Strategy:
-                   Even: Content Left, Node Center, (Null Right) -> Actually "Row Reverse" might be easier OR
-                   just absolute positioning relative to center line.
-                   Let's stick to the previous flex approach but refine margins.
-                */}
-                
                  <div className={cn(
                     "flex items-center gap-8 w-full md:w-1/2",
                     isEven ? "md:flex-row-reverse md:mr-[50%]" : "md:flex-row md:ml-[50%]"
                  )}>
                     {/* Node */}
-                    <Link href={level.is_unlocked ? `/dashboard/belajar/${level.id}` : "#"} className="relative shrink-0 z-20 group">
+                    <Link 
+                        href={level.is_unlocked ? `/dashboard/belajar/${level.id}` : "#"} 
+                        className="relative shrink-0 z-20 group"
+                        ref={el => { nodeRefs.current[index] = el }}
+                    >
                         <div className={cn(
                             "w-24 h-24 md:w-28 md:h-28 rounded-full flex flex-col items-center justify-center border-[6px] shadow-2xl transition-all duration-300 relative bg-white",
                             level.is_unlocked 
@@ -95,7 +148,7 @@ export default function LearningMap({ levels }: { levels: Level[] }) {
       </div>
 
        {/* Finish Line */}
-      <div className="flex justify-center mt-24 relative z-10">
+      <div className="flex justify-center mt-24 relative z-10" ref={trophyRef}>
          <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center text-yellow-400 shadow-2xl shadow-slate-900/40 ring-8 ring-slate-50 animate-bounce-slow">
             <Trophy fill="currentColor" size={32} />
          </div>

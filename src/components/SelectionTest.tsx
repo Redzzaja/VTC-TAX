@@ -114,30 +114,51 @@ export default function SelectionTestPage({ user }: { user: any }) {
             </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
             {QUESTIONS.map((q, idx) => (
-                <Card key={q.id} className="border-2 shadow-sm">
-                    <CardHeader className="bg-slate-50 border-b pb-4">
-                        <CardTitle className="text-lg">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-sm mr-3">
-                                {idx + 1}
-                            </span>
+                <div key={q.id} className="bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 overflow-hidden">
+                    {/* Header Question */}
+                    <div className="p-6 md:p-8 border-b border-slate-50 flex gap-5">
+                         <div className="shrink-0 w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-slate-900/20">
+                            {idx + 1}
+                         </div>
+                         <h3 className="font-bold text-lg text-slate-800 leading-normal pt-1.5">
                             {q.question}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
+                         </h3>
+                    </div>
+
+                    {/* Options */}
+                    <div className="p-6 md:p-8 pt-0">
                         <RadioGroup onValueChange={(val: string) => handleAnswer(q.id, val)} className="space-y-3">
-                            {q.options.map((opt) => (
-                                <div key={opt} className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors ${answers[q.id] === opt ? "bg-slate-100 border-slate-400" : "hover:bg-slate-50"}`}>
-                                    <RadioGroupItem value={opt} id={`q${q.id}-${opt}`} />
-                                    <Label htmlFor={`q${q.id}-${opt}`} className="flex-1 cursor-pointer font-normal">
-                                        {opt}
-                                    </Label>
-                                </div>
-                            ))}
+                            {q.options.map((opt) => {
+                                const isSelected = answers[q.id] === opt;
+                                return (
+                                    <div 
+                                        key={opt} 
+                                        onClick={() => handleAnswer(q.id, opt)}
+                                        className={`flex items-center space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 group ${
+                                            isSelected 
+                                            ? "border-slate-900 bg-slate-50 shadow-sm" 
+                                            : "border-slate-100 hover:border-slate-300 hover:bg-slate-50/50"
+                                        }`}
+                                    >
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                            isSelected ? "border-slate-900" : "border-slate-300 group-hover:border-slate-400"
+                                        }`}>
+                                            {isSelected && <div className="w-2.5 h-2.5 bg-slate-900 rounded-full" />}
+                                        </div>
+                                        <span className={`flex-1 font-medium transition-colors ${
+                                            isSelected ? "text-slate-900" : "text-slate-600 group-hover:text-slate-800"
+                                        }`}>
+                                            {opt}
+                                        </span>
+                                        <RadioGroupItem value={opt} id={`q${q.id}-${opt}`} className="sr-only" />
+                                    </div>
+                                );
+                            })}
                         </RadioGroup>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             ))}
         </div>
 

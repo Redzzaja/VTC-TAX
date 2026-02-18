@@ -1,5 +1,6 @@
 import {
   addQuestionAction,
+  deleteQuestionAction,
   getLevelsAction,
   getSubLevelsAction,
   getQuestionsAction,
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { ClipboardCheck, ChevronRight, PlusCircle, HelpCircle } from "lucide-react";
+import { ClipboardCheck, ChevronRight, PlusCircle, HelpCircle, Trash2 } from "lucide-react";
 
 export default async function AdminQuizPage({
   searchParams,
@@ -145,20 +146,42 @@ export default async function AdminQuizPage({
                         <div key={q.id} className="p-3 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all group">
                            <div className="flex justify-between items-start gap-2 mb-2">
                               <span className="font-bold text-slate-900 text-xs bg-slate-200 px-1.5 py-0.5 rounded">Q{idx+1}</span>
+                              <form action={async () => {
+                                  "use server";
+                                  await deleteQuestionAction(q.id);
+                              }}>
+                                  <button className="text-slate-400 hover:text-red-600 transition-colors p-1" title="Hapus Soal">
+                                      <Trash2 size={16} />
+                                  </button>
+                              </form>
                            </div>
                            <p className="text-xs text-slate-700 font-medium mb-3 line-clamp-3 leading-relaxed">
                              {q.question_text}
                            </p>
                            <div className="grid grid-cols-2 gap-2 text-[10px]">
-                              {['A','B','C','D'].map((opt) => (
-                                 <div key={opt} className={`px-2 py-1 rounded border ${
-                                    q.correct_answer === opt 
-                                      ? "bg-green-50 border-green-200 text-green-700 font-bold" 
-                                      : "bg-white border-slate-100 text-slate-500"
-                                 }`}>
-                                    {opt}. {q[`option_${opt.toLowerCase()}`] || '-'}
-                                 </div>
-                              ))}
+                              {(() => {
+                                  try {
+                                      let opts: string[] = [];
+                                      if (typeof q.options === 'string') {
+                                          opts = JSON.parse(q.options);
+                                          if (!Array.isArray(opts)) opts = [];
+                                      } else if (Array.isArray(q.options)) {
+                                          opts = q.options;
+                                      }
+                                      
+                                      return ['A','B','C','D'].map((label, i) => (
+                                         <div key={label} className={`px-2 py-1 rounded border ${
+                                            q.correct_answer === label 
+                                              ? "bg-green-50 border-green-200 text-green-700 font-bold" 
+                                              : "bg-white border-slate-100 text-slate-500"
+                                         }`}>
+                                            {label}. {opts[i] || '-'}
+                                         </div>
+                                      ));
+                                  } catch (e) {
+                                      return <div className="col-span-2 text-red-400">Error displaying options</div>;
+                                  }
+                              })()}
                            </div>
                         </div>
                       ))}

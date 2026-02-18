@@ -1,6 +1,7 @@
 "use server";
 
 import { query } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 // --- 1. AMBIL BANK SOAL ---
 export async function getQuestionsAction() {
@@ -62,7 +63,67 @@ export async function submitExamAction(data: any) {
 
     return { success: true, message: "Jawaban tersimpan." };
   } catch (error) {
-    console.error("Submit Exam Error:", error);
+    console.error("Error submitting exam:", error);
     return { success: false, message: "Terjadi kesalahan server." };
   }
 }
+
+// --- 4. CRUD BANK SOAL (ADMIN) ---
+
+export async function createQuestionAction(data: any) {
+  try {
+    await query(
+      `INSERT INTO bank_soal (question, option_a, option_b, option_c, option_d, correct_answer)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        data.question,
+        data.option_a,
+        data.option_b,
+        data.option_c,
+        data.option_d,
+        data.correct_answer,
+      ]
+    );
+    revalidatePath("/dashboard/admin/seleksi-soal");
+    return { success: true, message: "Soal berhasil ditambahkan." };
+  } catch (error) {
+    console.error("Error creating question:", error);
+    return { success: false, message: "Gagal menambahkan soal." };
+  }
+}
+
+export async function updateQuestionAction(id: number, data: any) {
+  try {
+    await query(
+      `UPDATE bank_soal 
+       SET question = $1, option_a = $2, option_b = $3, option_c = $4, option_d = $5, correct_answer = $6
+       WHERE id = $7`,
+      [
+        data.question,
+        data.option_a,
+        data.option_b,
+        data.option_c,
+        data.option_d,
+        data.correct_answer,
+        id,
+      ]
+    );
+    revalidatePath("/dashboard/admin/seleksi-soal");
+    return { success: true, message: "Soal berhasil diperbarui." };
+  } catch (error) {
+    console.error("Error updating question:", error);
+    return { success: false, message: "Gagal memperbarui soal." };
+  }
+}
+
+export async function deleteQuestionAction(id: number) {
+  try {
+    await query("DELETE FROM bank_soal WHERE id = $1", [id]);
+    revalidatePath("/dashboard/admin/seleksi-soal");
+    return { success: true, message: "Soal berhasil dihapus." };
+  } catch (error) {
+    console.error("Error deleting question:", error);
+    return { success: false, message: "Gagal menghapus soal." };
+  }
+}
+
