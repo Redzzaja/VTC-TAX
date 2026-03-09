@@ -59,8 +59,6 @@ const SplitText: React.FC<SplitTextProps> = ({
     );
   }, [isVisible, delay, duration, ease, onComplete]);
 
-  const Tag = tag as keyof JSX.IntrinsicElements;
-
   const words = text.split(' ');
 
   return (
