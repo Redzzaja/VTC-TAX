@@ -1,12 +1,11 @@
-import { getLevelsAction, getSubLevelsAction, createSubLevelAction, deleteSubLevelAction } from "@/actions/quiz-action";
+import { getLevelsAction, getSubLevelsAction, createSubLevelAction, deleteSubLevelAction, updateSubLevelVideoAction } from "@/actions/quiz-action";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Plus, GitBranch } from "lucide-react";
+import { Trash2, Plus, GitBranch, PlayCircle, Video } from "lucide-react";
 
 export default async function AdminSubLevelsPage({ searchParams }: { searchParams: Promise<{ levelId?: string }> }) {
   const levelsRes = await getLevelsAction();
@@ -29,6 +28,13 @@ export default async function AdminSubLevelsPage({ searchParams }: { searchParam
   async function deleteSubLevel(id: number) {
     "use server";
     await deleteSubLevelAction(id);
+  }
+
+  async function updateVideo(formData: FormData) {
+    "use server";
+    const id = parseInt(formData.get("subLevelId") as string);
+    const videoUrl = formData.get("videoUrl") as string;
+    await updateSubLevelVideoAction(id, videoUrl);
   }
 
    return (
@@ -83,6 +89,14 @@ export default async function AdminSubLevelsPage({ searchParams }: { searchParam
                           <Label>KKM (Min. Score)</Label>
                           <Input name="minScore" type="number" defaultValue={70} className="bg-white text-slate-900 border-slate-300 focus:ring-slate-500 focus:border-slate-500" />
                       </div>
+                      <div className="space-y-2">
+                          <Label className="flex items-center gap-1.5">
+                            <Video size={14} className="text-red-500" />
+                            Link Video YouTube
+                          </Label>
+                          <Input name="videoUrl" type="url" placeholder="https://youtube.com/watch?v=..." className="bg-white text-slate-900 border-slate-300 focus:ring-slate-500 focus:border-slate-500" />
+                          <p className="text-[11px] text-slate-400">Opsional. Video materi akan ditampilkan sebelum kuis.</p>
+                      </div>
                       <Button type="submit" className="w-full bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20" disabled={!selectedLevelId}>
                           <Plus size={16} className="mr-2" /> Tambah Sub-Level
                       </Button>
@@ -99,9 +113,10 @@ export default async function AdminSubLevelsPage({ searchParams }: { searchParam
                   <Table>
                       <TableHeader>
                           <TableRow className="hover:bg-transparent border-slate-100">
-                             <TableHead className="w-[80px]">Part</TableHead>
+                             <TableHead className="w-[60px]">Part</TableHead>
                              <TableHead>Judul Materi</TableHead>
                              <TableHead>KKM</TableHead>
+                             <TableHead>Video</TableHead>
                              <TableHead className="text-right">Aksi</TableHead>
                           </TableRow>
                       </TableHeader>
@@ -111,18 +126,43 @@ export default async function AdminSubLevelsPage({ searchParams }: { searchParam
                                  <TableCell className="font-bold text-center bg-slate-50 rounded-lg text-slate-700">{sub.sub_level_number}</TableCell>
                                  <TableCell className="font-medium text-slate-800">{sub.title}</TableCell>
                                  <TableCell className="text-slate-600">{sub.min_score_to_pass}</TableCell>
+                                 <TableCell>
+                                    {sub.video_url ? (
+                                      <a href={sub.video_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-red-500 hover:text-red-700 transition-colors text-xs font-medium">
+                                        <PlayCircle size={14} /> Video
+                                      </a>
+                                    ) : (
+                                      <span className="text-slate-300 text-xs">—</span>
+                                    )}
+                                 </TableCell>
                                  <TableCell className="text-right">
-                                     <form action={deleteSubLevel.bind(null, sub.id)}>
-                                         <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                                             <Trash2 size={16} />
-                                         </Button>
-                                     </form>
+                                    <div className="flex items-center justify-end gap-1">
+                                      {/* Inline Video URL Edit */}
+                                      <form action={updateVideo} className="flex items-center gap-1">
+                                        <input type="hidden" name="subLevelId" value={sub.id} />
+                                        <Input 
+                                          name="videoUrl" 
+                                          type="url" 
+                                          defaultValue={sub.video_url || ""} 
+                                          placeholder="Link YT..." 
+                                          className="h-8 text-xs w-40 bg-white text-slate-900 border-slate-200 focus:ring-slate-500 focus:border-slate-500" 
+                                        />
+                                        <Button type="submit" variant="ghost" size="sm" className="h-8 px-2 text-slate-500 hover:text-green-600 hover:bg-green-50 text-xs">
+                                          Simpan
+                                        </Button>
+                                      </form>
+                                      <form action={deleteSubLevel.bind(null, sub.id)}>
+                                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
+                                              <Trash2 size={16} />
+                                          </Button>
+                                      </form>
+                                    </div>
                                  </TableCell>
                              </TableRow>
                          ))}
                          {subLevels.length === 0 && (
                              <TableRow>
-                                 <TableCell colSpan={4} className="text-center py-8 text-slate-400">Belum ada sub-level di level ini.</TableCell>
+                                 <TableCell colSpan={5} className="text-center py-8 text-slate-400">Belum ada sub-level di level ini.</TableCell>
                              </TableRow>
                          )}
                       </TableBody>

@@ -80,3 +80,32 @@ h6 {
   background: rgba(14, 165, 233, 0.3);
   color: #fff;
 }
+
+/* ReactBits ShinyText Animation */
+@keyframes shine {
+  0% { background-position: 200% 50%; }
+  100% { background-position: -200% 50%; }
+}
+.animate-shine {
+  animation: shine 5s linear infinite;
+}
+
+/* Landing Page Aurora Background */
+@keyframes aurora-float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(30px, -50px) rotate(3deg) scale(1.05); }
+  50% { transform: translate(-20px, 20px) rotate(-2deg) scale(0.95); }
+  75% { transform: translate(40px, 30px) rotate(4deg) scale(1.02); }
+}
+
+@keyframes aurora-float-reverse {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(-40px, 30px) rotate(-3deg) scale(1.03); }
+  50% { transform: translate(30px, -40px) rotate(2deg) scale(0.97); }
+  75% { transform: translate(-30px, -20px) rotate(-4deg) scale(1.05); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}

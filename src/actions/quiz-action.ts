@@ -18,6 +18,7 @@ export type QuizSubLevel = {
   sub_level_number: number;
   title: string;
   min_score_to_pass: number;
+  video_url?: string;
   is_locked?: boolean; // For frontend logic
   is_completed?: boolean;
   score?: number;
@@ -271,17 +272,32 @@ export async function createSubLevelAction(formData: FormData) {
   const title = formData.get("title") as string;
   const subLevelNumber = parseInt(formData.get("subLevelNumber") as string);
   const minScore = parseInt(formData.get("minScore") as string) || 70;
+  const videoUrl = (formData.get("videoUrl") as string) || null;
 
   try {
     await query(
-      "INSERT INTO quiz_sub_levels (level_id, sub_level_number, title, min_score_to_pass) VALUES ($1, $2, $3, $4)",
-      [levelId, subLevelNumber, title, minScore]
+      "INSERT INTO quiz_sub_levels (level_id, sub_level_number, title, min_score_to_pass, video_url) VALUES ($1, $2, $3, $4, $5)",
+      [levelId, subLevelNumber, title, minScore, videoUrl]
     );
     revalidatePath("/dashboard/admin/learning/sublevels");
     revalidatePath("/dashboard/belajar");
     return { success: true, message: "Sub-level berhasil dibuat." };
   } catch (error) {
     return { success: false, message: "Gagal membuat sub-level." };
+  }
+}
+
+export async function updateSubLevelVideoAction(id: number, videoUrl: string) {
+  try {
+    await query(
+      "UPDATE quiz_sub_levels SET video_url = $1 WHERE id = $2",
+      [videoUrl || null, id]
+    );
+    revalidatePath("/dashboard/admin/learning/sublevels");
+    revalidatePath("/dashboard/belajar");
+    return { success: true, message: "Video URL berhasil diperbarui." };
+  } catch (error) {
+    return { success: false, message: "Gagal memperbarui video URL." };
   }
 }
 

@@ -1,5 +1,6 @@
 import {
   getQuestionsAction,
+  getSubLevelsAction,
   submitQuizAction,
   resetQuizAction,
 } from "@/actions/quiz-action";
@@ -18,6 +19,8 @@ import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { extractYouTubeId } from "@/lib/utils";
+import SubLevelContent from "@/components/SubLevelContent";
 
 export default async function QuizPage({
   params,
@@ -57,7 +60,15 @@ export default async function QuizPage({
       return { ...q, options: parsedOptions };
   }) : [];
 
-  // 2. Check for Result Cookie
+  // 2. Fetch Sub-Level data for video_url
+  const subLevelRes = await getSubLevelsAction(parseInt(levelId));
+  const subLevelData = subLevelRes.success 
+    ? subLevelRes.data.find((s: any) => s.id === parseInt(subLevelId)) 
+    : null;
+  const videoUrl = subLevelData?.video_url || null;
+  const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
+
+  // 3. Check for Result Cookie
   const cookieStore = await cookies();
   const session = cookieStore.get("user_session");
   if (!session) redirect("/");
@@ -73,7 +84,7 @@ export default async function QuizPage({
       }
   }
 
-  // 3. Render Result View if exists
+  // 4. Render Result View if exists
   if (resultData) {
       return (
           <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in zoom-in duration-500 pt-10">
@@ -121,7 +132,7 @@ export default async function QuizPage({
                                               <div className="mt-2 pt-2 border-t border-slate-200/50">
                                                   <span className="font-bold text-slate-700 block mb-1">Penjelasan:</span>
                                                   <p className="text-slate-600 leading-relaxed italic">
-                                                      "{item.explanation}"
+                                                      &quot;{item.explanation}&quot;
                                                   </p>
                                               </div>
                                           )}
@@ -161,18 +172,19 @@ export default async function QuizPage({
       )
   }
 
-  // 4. Render Quiz Form (Default)
+  // 5. Render with Tab Navigation (Materi / Kuis)
   return (
-    <div className="max-w-3xl mx-auto py-10 animate-in fade-in duration-500">
-      <div className="mb-6">
-         <Link href={`/dashboard/belajar/${levelId}`} className="text-sm text-slate-500 hover:text-slate-800 mb-2 block">
-            &larr; Kembali ke Materi
-         </Link>
-         <h1 className="text-2xl font-bold text-slate-900">Kuis Evaluasi</h1>
-         <p className="text-slate-500">Jawab pertanyaan berikut untuk menyelesaikan sub-level ini.</p>
-      </div>
-
+    <SubLevelContent
+      levelId={levelId}
+      subLevelTitle={subLevelData?.title || "Kuis Evaluasi"}
+      youtubeId={youtubeId}
+    >
+      {/* Quiz Section (passed as children to Kuis tab) */}
       <Card className="border-0 shadow-md">
+        <CardHeader className="border-b border-slate-100">
+          <CardTitle className="text-lg text-slate-800">📝 Kuis Evaluasi</CardTitle>
+          <CardDescription>Jawab pertanyaan berikut untuk menyelesaikan sub-level ini.</CardDescription>
+        </CardHeader>
         <CardContent className="p-6">
           <form
             action={async (formData: FormData) => {
@@ -228,6 +240,6 @@ export default async function QuizPage({
           </form>
         </CardContent>
       </Card>
-    </div>
+    </SubLevelContent>
   );
 }

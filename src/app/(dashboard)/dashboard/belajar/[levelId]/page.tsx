@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getLevelsAndProgressAction } from "@/actions/quiz-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock, CheckCircle, PlayCircle, ChevronLeft, Flag } from "lucide-react";
+import { Lock, CheckCircle, PlayCircle, ChevronLeft, Flag, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
@@ -17,13 +17,11 @@ export default async function LevelDetailPage({ params }: { params: Promise<{ le
   const user = session ? JSON.parse(session.value) : null;
   if (!user) redirect("/");
 
-  // Fetch all data (Inefficient but robust essentially)
   const res = await getLevelsAndProgressAction(user.username);
   const levels = res?.levels || [];
   
   const level = levels.find((l: any) => l.id === levelId);
 
-  // If level not found or locked, redirect back
   if (!level) redirect("/dashboard/belajar");
   if (!level.is_unlocked) redirect("/dashboard/belajar");
 
@@ -51,6 +49,7 @@ export default async function LevelDetailPage({ params }: { params: Promise<{ le
            {(level.sub_levels || []).map((sub: any, idx: number) => {
                const isLocked = sub.isLocked;
                const isCompleted = sub.isCompleted;
+               const hasVideo = !!sub.video_url;
 
                return (
                    <Card 
@@ -83,14 +82,22 @@ export default async function LevelDetailPage({ params }: { params: Promise<{ le
                                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
                                       Part {sub.sub_level_number}
                                   </span>
-                                  {sub.score !== undefined && (
-                                      <span className={cn(
-                                          "text-xs font-bold px-2 py-0.5 rounded-full",
-                                          sub.score >= sub.min_score_to_pass ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                      )}>
-                                          Nilai: {sub.score}
+                                  <div className="flex items-center gap-2">
+                                    {/* Video Indicator */}
+                                    {hasVideo && (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                                        <Video size={10} /> Video
                                       </span>
-                                  )}
+                                    )}
+                                    {sub.score !== undefined && (
+                                        <span className={cn(
+                                            "text-xs font-bold px-2 py-0.5 rounded-full",
+                                            sub.score >= sub.min_score_to_pass ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                        )}>
+                                            Nilai: {sub.score}
+                                        </span>
+                                    )}
+                                  </div>
                                </div>
                                
                                <h3 className={cn("font-bold text-lg leading-tight", isLocked ? "text-slate-400" : "text-slate-800")}>
